@@ -10,8 +10,13 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum Role {
+  USER
+  ADVERTISER
+}
+
 model User {
-  id           String    @id @default(cuid())
+  id           String    @id @default(uuid())
   email        String    @unique
   passwordHash String?
   role         Role      @default(USER)
@@ -20,58 +25,63 @@ model User {
   ageVerified  Boolean   @default(false)
   ads          Ad[]
   ratings      Rating[]
-  payments     Payment[]
-}
-
-enum Role {
-  USER
-  ADVERTISER
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 }
 
 model Category {
-  id    String @id @default(cuid())
+  id    String @id @default(uuid())
   name  String @unique
-  ads   Ad[]   @relation("AdCategories")
+  ads   Ad[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Ad {
-  id            String     @id @default(cuid())
+  id            String      @id @default(uuid())
   title         String
   description   String
   country       String
-  department    String
+  state         String
   city          String
-  active        Boolean    @default(true)
+  active        Boolean     @default(true)
   premiumUntil  DateTime?
-  author        User       @relation(fields: [authorId], references: [id])
+  author        User        @relation(fields: [authorId], references: [id])
   authorId      String
-  categories    Category[] @relation("AdCategories")
-  tags          Tag[]      @relation("AdTags")
+  category      Category    @relation(fields: [categoryId], references: [id])
+  categoryId    String
+  tags          Tag[]
   ratings       Rating[]
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
 }
 
 model Tag {
-  id   String @id @default(cuid())
-  name String @unique
-  ads  Ad[]   @relation("AdTags")
+  id    String @id @default(uuid())
+  name  String @unique
+  ads   Ad[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Rating {
-  id          String    @id @default(cuid())
+  id          String   @id @default(uuid())
   stars       Int
   comment     String?
-  approved    Boolean   @default(false)
-  ad          Ad        @relation(fields: [adId], references: [id])
+  approved    Boolean  @default(false)
+  ad          Ad       @relation(fields: [adId], references: [id])
   adId        String
-  ratedByUser User      @relation(fields: [ratedByUserId], references: [id])
-  ratedByUserId String
+  user        User     @relation(fields: [userId], references: [id])
+  userId      String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
 
 model Payment {
-  id              String   @id @default(cuid())
+  id              String   @id @default(uuid())
   stripeSessionId String   @unique
   status          String // e.g., "pending", "completed", "failed"
-  user            User     @relation(fields: [userId], references: [id])
-  userId          String
+  adId            String
   createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 }
