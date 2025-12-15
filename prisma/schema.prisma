@@ -2,7 +2,9 @@
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
+  // Agregamos los binaryTargets para Replit y otros entornos comunes
+  binaryTargets = ["native", "linux-arm64-openssl-3.0.x", "debian-openssl-1.1.x"]
 }
 
 datasource db {
@@ -16,7 +18,7 @@ enum Role {
 }
 
 model User {
-  id           String    @id @default(uuid())
+  id           String    @id @default(cuid())
   email        String    @unique
   passwordHash String?
   role         Role      @default(USER)
@@ -24,25 +26,23 @@ model User {
   avatarUrl    String?
   ageVerified  Boolean   @default(false)
   ads          Ad[]
-  ratings      Rating[]
+  ratingsGiven Rating[]
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 }
 
 model Category {
-  id    String @id @default(uuid())
+  id    String @id @default(cuid())
   name  String @unique
   ads   Ad[]
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
 }
 
 model Ad {
-  id            String      @id @default(uuid())
+  id            String      @id @default(cuid())
   title         String
   description   String
   country       String
-  state         String
+  department    String
   city          String
   active        Boolean     @default(true)
   premiumUntil  DateTime?
@@ -57,31 +57,28 @@ model Ad {
 }
 
 model Tag {
-  id    String @id @default(uuid())
+  id    String @id @default(cuid())
   name  String @unique
   ads   Ad[]
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
 }
 
 model Rating {
-  id          String   @id @default(uuid())
+  id          String   @id @default(cuid())
   stars       Int
   comment     String?
   approved    Boolean  @default(false)
   ad          Ad       @relation(fields: [adId], references: [id])
   adId        String
-  user        User     @relation(fields: [userId], references: [id])
-  userId      String
+  ratedByUser User     @relation(fields: [ratedByUserId], references: [id])
+  ratedByUserId String
   createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
 }
 
 model Payment {
-  id              String   @id @default(uuid())
-  stripeSessionId String   @unique
+  id              String    @id @default(cuid())
+  stripeSessionId String    @unique
   status          String // e.g., "pending", "completed", "failed"
   adId            String
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
 }
