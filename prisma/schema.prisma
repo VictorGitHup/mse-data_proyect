@@ -1,24 +1,27 @@
-datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
-}
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
 
 generator client {
   provider = "prisma-client-js"
 }
 
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
 model User {
-  id           String        @id @default(cuid())
-  email        String        @unique
+  id           String    @id @default(cuid())
+  email        String    @unique
   passwordHash String?
-  role         Role          @default(USER)
-  username     String        @unique
+  role         Role      @default(USER)
+  username     String    @unique
   avatarUrl    String?
-  ageVerified  Boolean       @default(false)
+  ageVerified  Boolean   @default(false)
   ads          Ad[]
   ratings      Rating[]
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 }
 
 model Category {
@@ -28,42 +31,52 @@ model Category {
 }
 
 model Ad {
-  id            String     @id @default(cuid())
-  title         String
-  description   String
-  country       String
-  department    String
-  city          String
-  active        Boolean    @default(true)
-  premiumUntil  DateTime?
-  userId        String
-  user          User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  categories    Category[]
-  tags          Tag[]
-  ratings       Rating[]
-  payments      Payment[]
-  createdAt     DateTime   @default(now())
-  updatedAt     DateTime   @updatedAt
+  id           String     @id @default(cuid())
+  title        String
+  description  String
+  country      String
+  department   String
+  city         String
+  active       Boolean    @default(true)
+  premiumUntil DateTime?
+  author       User       @relation(fields: [authorId], references: [id])
+  authorId     String
+  category     Category   @relation(fields: [categoryId], references: [id])
+  categoryId   String
+  tags         AdTag[]
+  ratings      Rating[]
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
 }
 
 model Tag {
-  id   String @id @default(cuid())
-  name String @unique
-  ads  Ad[]
+  id   String  @id @default(cuid())
+  name String  @unique
+  ads  AdTag[]
+}
+
+model AdTag {
+  ad     Ad     @relation(fields: [adId], references: [id])
+  adId   String
+  tag    Tag    @relation(fields: [tagId], references: [id])
+  tagId  String
+
+  @@id([adId, tagId])
 }
 
 model Rating {
-  id        String   @id @default(cuid())
-  stars     Int
-  comment   String?
-  approved  Boolean  @default(false)
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  adId      String
-  ad        Ad       @relation(fields: [adId], references: [id], onDelete: Cascade)
-  createdAt DateTime @default(now())
+  id         String   @id @default(cuid())
+  stars      Int
+  comment    String?
+  approved   Boolean  @default(false)
+  ad         Ad       @relation(fields: [adId], references: [id])
+  adId       String
+  author     User     @relation(fields: [authorId], references: [id])
+  authorId   String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
-  @@unique([userId, adId])
+  @@unique([adId, authorId])
 }
 
 model Payment {
@@ -71,8 +84,8 @@ model Payment {
   stripeSessionId String         @unique
   status          PaymentStatus
   adId            String
-  ad              Ad             @relation(fields: [adId], references: [id], onDelete: Cascade)
   createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
 }
 
 enum Role {
