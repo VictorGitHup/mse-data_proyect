@@ -3,7 +3,7 @@
 
 generator client {
   provider        = "prisma-client-js"
-  binaryTargets   = ["native", "linux-arm64-openssl-1.1.x"]
+  previewFeatures = ["driverAdapters"]
 }
 
 datasource db {
@@ -11,19 +11,79 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-enum UserRole {
-  USER
-  ADVERTISER
-}
-
 model User {
   id           String    @id @default(cuid())
   email        String    @unique
   passwordHash String?
-  role         UserRole  @default(USER)
+  role         Role      @default(USER)
   username     String    @unique
   avatarUrl    String?
   ageVerified  Boolean   @default(false)
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  ads          Ad[]
+  ratings      Rating[]
+  payments     Payment[]
+}
+
+model Category {
+  id   String @id @default(cuid())
+  name String @unique
+  ads  Ad[]
+}
+
+model Ad {
+  id            String      @id @default(cuid())
+  title         String
+  description   String
+  country       String
+  department    String
+  city          String
+  active        Boolean     @default(true)
+  premiumUntil  DateTime?
+  author        User        @relation(fields: [authorId], references: [id])
+  authorId      String
+  category      Category    @relation(fields: [categoryId], references: [id])
+  categoryId    String
+  tags          Tag[]
+  ratings       Rating[]
+  payments      Payment[]
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+}
+
+model Tag {
+  id   String @id @default(cuid())
+  name String @unique
+  ads  Ad[]
+}
+
+model Rating {
+  id        String   @id @default(cuid())
+  stars     Int
+  comment   String?
+  approved  Boolean  @default(false)
+  ad        Ad       @relation(fields: [adId], references: [id])
+  adId      String
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+  createdAt DateTime @default(now())
+
+  @@index([adId])
+  @@index([userId])
+}
+
+model Payment {
+  id              String   @id @default(cuid())
+  stripeSessionId String   @unique
+  status          String // e.g., "pending", "completed", "failed"
+  ad              Ad       @relation(fields: [adId], references: [id])
+  adId            String
+  user            User     @relation(fields: [userId], references: [id])
+  userId          String
+  createdAt       DateTime @default(now())
+  amount          Float
+}
+
+enum Role {
+  USER
+  ADVERTISER
 }
