@@ -1,9 +1,6 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
-  provider      = "prisma-client-js"
-  binaryTargets = ["native", "linux-arm64-openssl-3.0.x"]
+  provider        = "prisma-client-js"
+  previewFeatures = ["driverAdapters"]
 }
 
 datasource db {
@@ -12,75 +9,64 @@ datasource db {
 }
 
 model User {
-  id           String   @id @default(cuid())
-  email        String   @unique
-  passwordHash String?
-  role         Role     @default(USER)
-  username     String   @unique
-  avatarUrl    String?
-  ageVerified  Boolean  @default(false)
-  ads          Ad[]
-  ratings      Rating[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-model Category {
-  id   String @id @default(cuid())
-  name String @unique
-  ads  Ad[]
+  id              String    @id @default(cuid())
+  email           String    @unique
+  password        String
+  name            String?
+  ads             Ad[]
+  ratingsGiven    Rating[]
+  paymentsMade    Payment[]
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
 }
 
 model Ad {
-  id           String     @id @default(cuid())
-  title        String
-  description  String
-  location     String // Simplified for now
-  active       Boolean    @default(true)
-  premiumUntil DateTime?
-  author       User       @relation(fields: [authorId], references: [id])
-  authorId     String
-  category     Category   @relation(fields: [categoryId], references: [id])
-  categoryId   String
-  tags         Tag[]
-  ratings      Rating[]   @relation("AdRatings")
-  payments     Payment[]
+  id              String     @id @default(cuid())
+  title           String
+  description     String
+  price           Float
+  author          User       @relation(fields: [authorId], references: [id])
+  authorId        String
+  category        Category   @relation(fields: [categoryId], references: [id])
+  categoryId      String
+  tags            Tag[]      @relation("AdTags")
+  ratings         Rating[]
+  payments        Payment[]
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+}
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+model Category {
+  id              String   @id @default(cuid())
+  name            String   @unique
+  ads             Ad[]
 }
 
 model Tag {
-  id   String @id @default(cuid())
-  name String @unique
-  ads  Ad[]
+  id              String   @id @default(cuid())
+  name            String   @unique
+  ads             Ad[]     @relation("AdTags")
 }
 
 model Rating {
-  id          String   @id @default(cuid())
-  stars       Int
-  comment     String?
-  approved    Boolean  @default(false)
-  ad          Ad       @relation("AdRatings", fields: [adId], references: [id])
-  adId        String
-  ratedByUser User     @relation(fields: [ratedByUserId], references: [id])
-  ratedByUserId String
-
-  createdAt DateTime @default(now())
-}
-
-model Payment {
-  id              String  @id @default(cuid())
-  stripeSessionId String  @unique
-  status          String // e.g., "pending", "completed", "failed"
-  ad              Ad      @relation(fields: [adId], references: [id])
+  id              String   @id @default(cuid())
+  value           Int
+  comment         String?
+  ad              Ad       @relation(fields: [adId], references: [id])
   adId            String
-  amount          Float
+  author          User     @relation(fields: [authorId], references: [id])
+  authorId        String
   createdAt       DateTime @default(now())
 }
 
-enum Role {
-  USER
-  ADVERTISER
+model Payment {
+  id              String   @id @default(cuid())
+  amount          Float
+  currency        String
+  status          String
+  ad              Ad       @relation(fields: [adId], references: [id])
+  adId            String
+  payer           User     @relation(fields: [payerId], references: [id])
+  payerId         String
+  createdAt       DateTime @default(now())
 }

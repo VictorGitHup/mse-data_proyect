@@ -1,5 +1,42 @@
-language = "nix"
-entrypoint = "npm run dev"
+language = "bash"
+run = "npm run dev"
+entrypoint = "index.js"
+
+[nix]
+channel = "stable-23_11"
+
+[deployment]
+run = ["sh", "-c", "npm run build && npm run start"]
+build_command = "npm run build"
+[[deployment.match]]
+pattern = "src/**/*"
+[[deployment.match]]
+pattern = "public/**/*"
+[[deployment.match]]
+pattern = ".next/**/*"
+[[deployment.match]]
+pattern = "package.json"
+[[deployment.match]]
+pattern = "next.config.ts"
+[[deployment.match]]
+pattern = "postcss.config.js"
+[[deployment.match]]
+pattern = "tailwind.config.ts"
+[[deployment.match]]
+pattern = "tsconfig.json"
+[[deployment.match]]
+pattern = "prisma/schema.prisma"
+[[deployment.match]]
+pattern = "apphosting.yaml"
+[[deployment.match]]
+pattern = "package-lock.json"
+
+[packager]
+language = "nodejs"
+[packager.features]
+packageSearch = true
+guessImports = true
+enabledForHosting = false
 
 [env]
-PRISMA_CLI_BINARY_TARGETS = "linux-arm64-openssl-3.0.x"
+PRISMA_TELEMETRY_INFORMATION = "ecosystem-studio, Replit, V1"
