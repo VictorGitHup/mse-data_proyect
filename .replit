@@ -1,0 +1,5 @@
+language = "nix"
+entrypoint = "npm run dev"
+
+[env]
+PRISMA_CLI_BINARY_TARGETS = "linux-arm64-openssl-3.0.x"
