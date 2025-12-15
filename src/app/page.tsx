@@ -1,165 +1,111 @@
+
 'use client';
 
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
+
+// Definimos un tipo para los anuncios para tener autocompletado y seguridad de tipos.
+type Ad = {
+  id: number;
+  title: string;
+  description: string | null;
+  created_at: string;
+};
 
 export default function Home() {
-  const [data, setData] = useState<any[] | null>(null);
+  const [ads, setAds] = useState<Ad[] | null>(null);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchData = async () => {
-      // We'll try to fetch from the 'ads' table to check if the schema exists.
-      const { data, error } = await supabase.from('ads').select('*').limit(1);
+    const fetchAds = async () => {
+      // Obtenemos los anuncios de la tabla 'ads', ordenados por fecha de creación.
+      const { data, error } = await supabase
+        .from('ads')
+        .select('*')
+        .order('created_at', { ascending: false });
 
       if (error) {
-        setError(
-          `Error: ${error.message}. It seems the tables don't exist yet. Please go to the Supabase SQL Editor and run the schema setup script below.`
-        );
-        console.error('Error fetching from Supabase:', error);
+        setError(`Error al cargar los anuncios: ${error.message}`);
+        console.error('Error fetching ads:', error);
       } else {
-        setData(data);
+        setAds(data);
       }
+      setLoading(false);
     };
 
-    fetchData();
+    fetchAds();
   }, []);
 
-  const schemaSQL = `
--- 1. Create custom types (ENUMs)
-create type user_role as enum ('USER', 'ADVERTISER');
-create type payment_status as enum ('PENDING', 'COMPLETED', 'FAILED');
-
--- 2. Create Tables
-create table "users" (
-  "id" bigint primary key generated always as identity,
-  "email" text unique not null,
-  "password_hash" text,
-  "role" user_role not null default 'USER',
-  "username" text unique,
-  "avatar_url" text,
-  "age_verified" boolean not null default false,
-  "created_at" timestamp with time zone not null default timezone('utc'::text, now())
-);
-
-create table "categories" (
-  "id" bigint primary key generated always as identity,
-  "name" text not null unique
-);
-
-create table "tags" (
-  "id" bigint primary key generated always as identity,
-  "name" text not null unique
-);
-
-create table "ads" (
-  "id" bigint primary key generated always as identity,
-  "author_id" bigint not null references "users"(id),
-  "category_id" bigint not null references "categories"(id),
-  "title" text not null,
-  "description" text,
-  "location_country" text,
-  "location_department" text,
-  "location_city" text,
-  "active" boolean not null default false,
-  "premium_until" timestamp with time zone,
-  "created_at" timestamp with time zone not null default timezone('utc'::text, now())
-);
-
-create table "ad_tags" (
-  "ad_id" bigint not null references "ads"(id) on delete cascade,
-  "tag_id" bigint not null references "tags"(id) on delete cascade,
-  primary key ("ad_id", "tag_id")
-);
-
-create table "ratings" (
-  "id" bigint primary key generated always as identity,
-  "ad_id" bigint not null references "ads"(id) on delete cascade,
-  "rater_user_id" bigint not null references "users"(id),
-  "stars" smallint not null check (stars >= 1 and stars <= 5),
-  "comment" text,
-  "approved" boolean not null default false,
-  "created_at" timestamp with time zone not null default timezone('utc'::text, now())
-);
-
-create table "payments" (
-  "id" bigint primary key generated always as identity,
-  "ad_id" bigint not null references "ads"(id),
-  "user_id" bigint not null references "users"(id),
-  "stripe_session_id" text,
-  "status" payment_status not null default 'PENDING',
-  "amount" numeric(10, 2),
-  "created_at" timestamp with time zone not null default timezone('utc'::text, now())
-);
-
--- 3. Enable RLS for all tables
-alter table "users" enable row level security;
-alter table "categories" enable row level security;
-alter table "tags" enable row level security;
-alter table "ads" enable row level security;
-alter table "ad_tags" enable row level security;
-alter table "ratings" enable row level security;
-alter table "payments" enable row level security;
-
--- 4. Create public read access policies
-create policy "Public users are viewable by everyone" on users for select using (true);
-create policy "Public categories are viewable by everyone" on categories for select using (true);
-create policy "Public tags are viewable by everyone" on tags for select using (true);
-create policy "Public ads are viewable by everyone" on ads for select using (true);
-create policy "Public ad_tags are viewable by everyone" on ad_tags for select using (true);
-create policy "Public ratings are viewable by everyone" on ratings for select using (true);
-create policy "Public payments are viewable by everyone" on payments for select using (true);
-
--- 5. Seed initial data
-insert into "categories" (name)
-values 
-  ('escort'),
-  ('servicios_virtuales'),
-  ('escort_gay');
-
-insert into "tags" (name)
-values
-  ('morena'),
-  ('alta'),
-  ('baja'),
-  ('rubia');
-`.trim();
-
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center bg-background p-4 text-center">
-      <div className="space-y-4 w-full max-w-4xl">
-        <h1 className="font-headline text-4xl font-bold tracking-tighter sm:text-5xl md:text-6xl">
-          Next.js + Supabase
+    <main className="container mx-auto p-4 md:p-8">
+      <header className="text-center mb-8">
+        <h1 className="font-headline text-4xl font-bold tracking-tighter sm:text-5xl">
+          Anuncios Recientes
         </h1>
-        <p className="mx-auto max-w-[700px] text-muted-foreground md:text-xl/relaxed">
-          The app is connected to Supabase. Now, let's set up the database schema.
+        <p className="mx-auto max-w-[700px] text-muted-foreground md:text-xl/relaxed mt-2">
+          Explora los últimos anuncios publicados en la plataforma.
         </p>
+      </header>
 
-        <div className="w-full rounded-lg border bg-card p-6 text-left shadow-sm">
-          <h2 className="text-lg font-semibold">Database Status:</h2>
-          
-          {error && (
-            <div className="mt-4 rounded-md bg-destructive/10 p-4 text-sm text-destructive-foreground">
-              <p className="font-semibold">Action Required</p>
-              <p className="mb-4">The required tables were not found in your database.</p>
-              <p className="mb-2 font-medium">Please set up your database schema:</p>
-              <p className="mb-4">Go to your Supabase project's <a href="https://supabase.com/dashboard/project/_/sql" target="_blank" rel="noopener noreferrer" className="font-semibold underline">SQL Editor</a>, paste the entire script below, and click "Run".</p>
-              <pre className="mt-2 rounded-md bg-muted p-4 text-xs text-muted-foreground overflow-auto max-h-[400px]">
-                {schemaSQL}
-              </pre>
-            </div>
-          )}
-
-          {data && (
-             <div className="mt-4 rounded-md bg-green-500/10 p-4 text-sm text-green-700">
-               <p className="font-semibold">Success!</p>
-               <p>The 'ads' table was found. Your database schema appears to be set up correctly.</p>
-            </div>
-          )}
-
-          {data === null && !error && <p className="mt-4 text-muted-foreground">Checking database status...</p>}
+      {loading && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {/* Muestra esqueletos de carga para una mejor experiencia de usuario */}
+          {Array.from({ length: 3 }).map((_, i) => (
+            <Card key={i}>
+              <CardHeader>
+                <Skeleton className="h-6 w-3/4" />
+                <Skeleton className="h-4 w-1/2 mt-2" />
+              </CardHeader>
+              <CardContent>
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-4 w-full mt-2" />
+              </CardContent>
+            </Card>
+          ))}
         </div>
-      </div>
+      )}
+
+      {error && (
+        <div className="text-center">
+          <p className="text-destructive font-semibold">¡Ocurrió un error!</p>
+          <p className="text-muted-foreground mt-2">{error}</p>
+          <p className="text-sm text-muted-foreground mt-2">
+            Asegúrate de haber ejecutado el script SQL y que las políticas RLS permitan la lectura (SELECT).
+          </p>
+        </div>
+      )}
+
+      {!loading && !error && ads && ads.length > 0 && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {ads.map((ad) => (
+            <Card key={ad.id} className="flex flex-col">
+              <CardHeader>
+                <CardTitle>{ad.title}</CardTitle>
+                <CardDescription>
+                  Publicado el {new Date(ad.created_at).toLocaleDateString()}
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="flex-grow">
+                <p className="text-muted-foreground">
+                  {ad.description || 'Este anuncio no tiene descripción.'}
+                </p>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+
+      {!loading && !error && (!ads || ads.length === 0) && (
+        <div className="text-center py-16 border-2 border-dashed rounded-lg">
+          <h2 className="text-2xl font-semibold">No hay anuncios todavía</h2>
+          <p className="text-muted-foreground mt-2">
+            Parece que nadie ha publicado un anuncio. ¡Sé el primero!
+          </p>
+        </div>
+      )}
     </main>
   );
 }
