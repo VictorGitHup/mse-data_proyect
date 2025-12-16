@@ -1,5 +1,6 @@
 
 import Image from 'next/image';
+import { Suspense } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -14,7 +15,7 @@ type Ad = {
   created_at: string;
 };
 
-export default async function Home() {
+async function AdGrid() {
   const supabase = createSupabaseServerClient();
   const { data: ads, error } = await supabase
     .from('ads')
@@ -22,12 +23,80 @@ export default async function Home() {
     .order('created_at', { ascending: false });
 
   if (error) {
-    console.error('Error fetching ads:', error);
-    // You could return an error message component here
+    // This error will be caught by the error.tsx boundary
+    throw new Error('Could not fetch ads. Please try again later.');
   }
 
-  const loading = !ads;
+  if (ads.length === 0) {
+    return (
+      <div className="text-center py-16 border-2 border-dashed rounded-lg col-span-full">
+        <h2 className="text-2xl font-semibold">No hay anuncios todavía</h2>
+        <p className="text-muted-foreground mt-2">
+          ¡Sé el primero! Una vez que se creen anuncios, aparecerán aquí.
+        </p>
+      </div>
+    );
+  }
 
+  return (
+    <>
+      {ads.map((ad) => (
+        <Card key={ad.id} className="overflow-hidden flex flex-col">
+          <div className="relative w-full h-48">
+             <Image
+              src={`https://picsum.photos/seed/${ad.id}/400/300`}
+              alt={ad.title}
+              fill
+              style={{ objectFit: 'cover' }}
+              data-ai-hint="portrait woman"
+            />
+          </div>
+          <CardHeader>
+            <CardTitle className="truncate">{ad.title}</CardTitle>
+            <CardDescription className="text-sm text-muted-foreground">
+              {ad.location_city}, {ad.location_country}
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="flex-grow">
+            <p className="text-sm text-muted-foreground line-clamp-3">
+              {ad.description || 'Sin descripción.'}
+            </p>
+          </CardContent>
+          <div className="p-4 pt-0">
+              <Badge variant="secondary">Ver más</Badge>
+          </div>
+        </Card>
+      ))}
+    </>
+  );
+}
+
+function AdGridSkeleton() {
+    return (
+        <>
+            {Array.from({ length: 8 }).map((_, index) => (
+                <Card key={index} className="overflow-hidden flex flex-col">
+                <Skeleton className="h-48 w-full" />
+                <CardHeader>
+                    <Skeleton className="h-6 w-3/4" />
+                    <Skeleton className="h-4 w-1/2 mt-2" />
+                </CardHeader>
+                <CardContent className="flex-grow space-y-2">
+                    <Skeleton className="h-4 w-full" />
+                    <Skeleton className="h-4 w-full" />
+                    <Skeleton className="h-4 w-2/3" />
+                </CardContent>
+                <div className="p-4 pt-0">
+                    <Skeleton className="h-6 w-20" />
+                </div>
+                </Card>
+            ))}
+        </>
+    )
+}
+
+
+export default function Home() {
   return (
     <main className="container mx-auto p-4 md:p-8">
       <header className="text-center mb-12">
@@ -39,64 +108,11 @@ export default async function Home() {
         </p>
       </header>
 
-      {loading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          {Array.from({ length: 8 }).map((_, index) => (
-            <Card key={index} className="overflow-hidden flex flex-col">
-              <Skeleton className="h-48 w-full" />
-              <CardHeader>
-                <Skeleton className="h-6 w-3/4" />
-                <Skeleton className="h-4 w-1/2 mt-2" />
-              </CardHeader>
-              <CardContent className="flex-grow space-y-2">
-                <Skeleton className="h-4 w-full" />
-                <Skeleton className="h-4 w-full" />
-                <Skeleton className="h-4 w-2/3" />
-              </CardContent>
-              <div className="p-4 pt-0">
-                <Skeleton className="h-6 w-20" />
-              </div>
-            </Card>
-          ))}
-        </div>
-      ) : ads && ads.length > 0 ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          {ads.map((ad) => (
-            <Card key={ad.id} className="overflow-hidden flex flex-col">
-              <div className="relative w-full h-48">
-                 <Image
-                  src={`https://picsum.photos/seed/${ad.id}/400/300`}
-                  alt={ad.title}
-                  fill
-                  style={{ objectFit: 'cover' }}
-                  data-ai-hint="portrait woman"
-                />
-              </div>
-              <CardHeader>
-                <CardTitle className="truncate">{ad.title}</CardTitle>
-                <CardDescription className="text-sm text-muted-foreground">
-                  {ad.location_city}, {ad.location_country}
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="flex-grow">
-                <p className="text-sm text-muted-foreground line-clamp-3">
-                  {ad.description || 'Sin descripción.'}
-                </p>
-              </CardContent>
-              <div className="p-4 pt-0">
-                  <Badge variant="secondary">Ver más</Badge>
-              </div>
-            </Card>
-          ))}
-        </div>
-      ) : (
-        <div className="text-center py-16 border-2 border-dashed rounded-lg">
-          <h2 className="text-2xl font-semibold">No hay anuncios todavía</h2>
-          <p className="text-muted-foreground mt-2">
-            ¡Sé el primero! Una vez que se creen anuncios, aparecerán aquí.
-          </p>
-        </div>
-      )}
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+        <Suspense fallback={<AdGridSkeleton />}>
+          <AdGrid />
+        </Suspense>
+      </div>
     </main>
   );
 }
