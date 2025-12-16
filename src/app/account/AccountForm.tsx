@@ -12,6 +12,7 @@ import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import type { User } from "@supabase/supabase-js";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { User as UserIcon } from "lucide-react";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 type Profile = {
   id: string;
@@ -54,8 +55,7 @@ export default function AccountForm({ user, profile }: AccountFormProps) {
       const updates = {
         id: user.id,
         username,
-        avatar_url: avatar_url ?? avatarUrl, // Use new URL if provided
-        role,
+        avatar_url: avatar_url ?? avatarUrl,
         updated_at: new Date().toISOString(),
       };
 
@@ -165,9 +165,9 @@ export default function AccountForm({ user, profile }: AccountFormProps) {
               disabled={loading}
             />
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="role">Tu Rol</Label>
-            <Input id="role" type="text" value={role === 'ADVERTISER' ? 'Anunciante' : 'Usuario'} disabled />
+           <div className="space-y-2">
+            <Label>Tu Rol</Label>
+            <Input type="text" value={role === 'ADVERTISER' ? 'Anunciante' : 'Usuario'} disabled />
           </div>
           <div>
             <Button onClick={() => updateProfile()} disabled={loading} className="w-full">
