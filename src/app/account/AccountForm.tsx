@@ -10,6 +10,8 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import type { User } from "@supabase/supabase-js";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { User as UserIcon } from "lucide-react";
 
 type Profile = {
   id: string;
@@ -46,13 +48,13 @@ export default function AccountForm({ user, profile }: AccountFormProps) {
     }
   }, [profile]);
 
-  async function updateProfile() {
+  async function updateProfile({ avatar_url }: { avatar_url?: string } = {}) {
     try {
       setLoading(true);
       const updates = {
         id: user.id,
         username,
-        avatar_url: avatarUrl,
+        avatar_url: avatar_url ?? avatarUrl, // Use new URL if provided
         role,
         updated_at: new Date().toISOString(),
       };
@@ -66,11 +68,49 @@ export default function AccountForm({ user, profile }: AccountFormProps) {
         title: "¡Éxito!",
         description: "Tu perfil ha sido actualizado.",
       });
-      // Refresh the page to get new server-side props
       router.refresh();
     } catch (error: any) {
       toast({
         title: "Error actualizando perfil",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function uploadAvatar(event: React.ChangeEvent<HTMLInputElement>) {
+    try {
+      setLoading(true);
+
+      if (!event.target.files || event.target.files.length === 0) {
+        throw new Error("Debes seleccionar una imagen para subir.");
+      }
+
+      const file = event.target.files[0];
+      const fileExt = file.name.split(".").pop();
+      const filePath = `${user.id}/${Math.random()}.${fileExt}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("avatars")
+        .upload(filePath, file, { upsert: true });
+
+      if (uploadError) {
+        throw uploadError;
+      }
+
+      const { data: { publicUrl } } = supabase.storage
+        .from("avatars")
+        .getPublicUrl(filePath);
+        
+      setAvatarUrl(publicUrl);
+      // Now update the profile with the new public URL
+      await updateProfile({ avatar_url: publicUrl });
+
+    } catch (error: any) {
+      toast({
+        title: "Error al subir el avatar",
         description: error.message,
         variant: "destructive",
       });
@@ -86,6 +126,31 @@ export default function AccountForm({ user, profile }: AccountFormProps) {
           <CardTitle>Tu Perfil</CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
+          <div className="flex items-center gap-4">
+             <Avatar className="h-20 w-20">
+              <AvatarImage src={avatarUrl} alt={username} />
+              <AvatarFallback>
+                <UserIcon className="h-10 w-10 text-muted-foreground" />
+              </AvatarFallback>
+            </Avatar>
+            <div className="space-y-2">
+                <Label htmlFor="avatar-upload" className="cursor-pointer">
+                    <Button asChild variant="outline">
+                        <div className="w-full">
+                            {loading ? "Subiendo..." : "Cambiar Avatar"}
+                        </div>
+                    </Button>
+                </Label>
+                <Input
+                    id="avatar-upload"
+                    type="file"
+                    accept="image/*"
+                    onChange={uploadAvatar}
+                    disabled={loading}
+                    className="hidden"
+                />
+            </div>
+          </div>
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
             <Input id="email" type="email" value={user?.email || ""} disabled />
@@ -101,21 +166,11 @@ export default function AccountForm({ user, profile }: AccountFormProps) {
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="avatar">URL del Avatar</Label>
-            <Input
-              id="avatar"
-              type="text"
-              value={avatarUrl}
-              onChange={(e) => setAvatarUrl(e.target.value)}
-              disabled={loading}
-            />
-          </div>
-          <div className="space-y-2">
             <Label htmlFor="role">Tu Rol</Label>
             <Input id="role" type="text" value={role === 'ADVERTISER' ? 'Anunciante' : 'Usuario'} disabled />
           </div>
           <div>
-            <Button onClick={updateProfile} disabled={loading} className="w-full">
+            <Button onClick={() => updateProfile()} disabled={loading} className="w-full">
               {loading ? "Actualizando..." : "Actualizar Perfil"}
             </Button>
           </div>
