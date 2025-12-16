@@ -5,17 +5,28 @@ import { ThemeSupa } from "@supabase/auth-ui-shared";
 import { supabase } from "@/lib/supabase";
 import { useApp } from "@/components/AppProvider";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 export default function LoginPage() {
   const { session } = useApp();
   const router = useRouter();
+  const [redirectUrl, setRedirectUrl] = useState('');
 
   useEffect(() => {
     if (session) {
       router.push("/account");
     }
   }, [session, router]);
+  
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setRedirectUrl(`${window.location.origin}/auth/callback`);
+    }
+  }, []);
+
+  if (!redirectUrl) {
+    return null; // O un spinner de carga
+  }
 
   return (
     <div className="flex justify-center items-center h-[calc(100vh-80px)]">
@@ -25,7 +36,7 @@ export default function LoginPage() {
           supabaseClient={supabase}
           appearance={{ theme: ThemeSupa }}
           providers={['google', 'github']}
-          redirectTo={`${typeof window !== 'undefined' ? window.location.origin : ''}/auth/callback`}
+          redirectTo={redirectUrl}
         />
       </div>
     </div>
