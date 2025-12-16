@@ -21,7 +21,7 @@ export default function Login() {
 
   const handleSignUp = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -32,8 +32,17 @@ export default function Login() {
           avatar_url: `https://api.dicebear.com/8.x/identicon/svg?seed=${email}`
         }
       },
-    })
-    setView('check_email')
+    });
+
+    if (error) {
+        toast({
+            title: "Error en el registro",
+            description: "Este correo electrónico ya está registrado. Por favor, inicia sesión.",
+            variant: "destructive",
+        });
+    } else if (data.user) {
+        setView('check_email');
+    }
   }
 
   const handleSignIn = async (e: React.FormEvent<HTMLFormElement>) => {
