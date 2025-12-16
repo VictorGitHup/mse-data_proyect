@@ -1,11 +1,8 @@
 
-'use client';
-
-import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import Image from 'next/image';
-import { createSupabaseBrowserClient } from '@/lib/supabase/client';
+import { createSupabaseServerClient } from '@/lib/supabase/server';
 
 // Define the type for an Ad, based on your SQL schema
 type Ad = {
@@ -17,29 +14,21 @@ type Ad = {
   created_at: string;
 };
 
-export default function Home() {
-  const supabase = createSupabaseBrowserClient();
-  const [ads, setAds] = useState<Ad[]>([]);
-  const [loading, setLoading] = useState(true);
+export default async function Home() {
+  const supabase = createSupabaseServerClient();
+  
+  // Fetching from the 'ads' table on the server
+  const { data: ads, error } = await supabase
+    .from('ads')
+    .select('*')
+    .order('created_at', { ascending: false }); // Show newest first
 
-  useEffect(() => {
-    async function fetchAds() {
-      // Fetching from the 'ads' table
-      const { data, error } = await supabase
-        .from('ads')
-        .select('*')
-        .order('created_at', { ascending: false }); // Show newest first
+  if (error) {
+    console.error('Error fetching ads:', error);
+    // You might want to render an error state here
+  }
 
-      if (error) {
-        console.error('Error fetching ads:', error);
-      } else {
-        setAds(data);
-      }
-      setLoading(false);
-    }
-    
-    fetchAds();
-  }, [supabase]);
+  const adsList: Ad[] = ads || [];
 
   return (
     <main className="container mx-auto p-4 md:p-8">
@@ -52,13 +41,9 @@ export default function Home() {
         </p>
       </header>
 
-      {loading ? (
-        <div className="text-center">
-          <p>Cargando anuncios...</p>
-        </div>
-      ) : ads.length > 0 ? (
+      {adsList.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          {ads.map((ad) => (
+          {adsList.map((ad) => (
             <Card key={ad.id} className="overflow-hidden flex flex-col">
               <div className="relative w-full h-48">
                  <Image

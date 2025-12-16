@@ -1,10 +1,10 @@
+
 "use client";
 
 import Link from "next/link";
 import { Button } from "./ui/button";
 import { User as UserIcon } from 'lucide-react';
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
-import { useEffect, useState } from "react";
 import type { User } from "@supabase/supabase-js";
 import { useRouter } from "next/navigation";
 
@@ -12,30 +12,14 @@ interface HeaderProps {
   user: User | null;
 }
 
-export default function Header({ user: initialUser }: HeaderProps) {
-  const [user, setUser] = useState<User | null>(initialUser);
-  const supabase = createSupabaseBrowserClient();
+export default function Header({ user }: HeaderProps) {
   const router = useRouter();
-
-  useEffect(() => {
-    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
-      setUser(session?.user ?? null);
-      if (event === 'SIGNED_IN') {
-        router.refresh();
-      }
-      if (event === 'SIGNED_OUT') {
-        router.push('/');
-        router.refresh();
-      }
-    });
-
-    return () => {
-      authListener.subscription.unsubscribe();
-    };
-  }, [supabase, router]);
-
+  
   const handleLogout = async () => {
+    const supabase = createSupabaseBrowserClient();
     await supabase.auth.signOut();
+    router.push('/');
+    router.refresh();
   };
 
   return (
