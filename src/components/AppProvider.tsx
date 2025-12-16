@@ -3,7 +3,7 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import type { Session, SupabaseClient, User } from "@supabase/supabase-js";
 import { useRouter } from "next/navigation";
-import { createSupabaseBrowserClient } from "@/lib/supabase";
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 
 // Define the context shape
 interface AppContextType {
@@ -17,7 +17,7 @@ export const AppContext = createContext<AppContextType | undefined>(undefined);
 
 // Create the provider component
 export default function AppProvider({ children }: { children: React.ReactNode }) {
-  const [supabase] = useState(() => createSupabaseBrowserClient());
+  const [supabase] = useState(() => createClientComponentClient());
   const [session, setSession] = useState<Session | null>(null);
   const user = session?.user ?? null;
   const router = useRouter();
