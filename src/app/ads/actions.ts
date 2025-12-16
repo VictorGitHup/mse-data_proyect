@@ -79,3 +79,39 @@ export async function createAd(
   redirect('/dashboard');
 }
 
+export async function toggleAdStatus(adId: number, currentState: boolean) {
+  const supabase = await createSupabaseServerClient();
+
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) {
+    throw new Error("No autenticado");
+  }
+
+  // Verify the user owns the ad before updating
+  const { data: ad, error: fetchError } = await supabase
+    .from('ads')
+    .select('user_id')
+    .eq('id', adId)
+    .single();
+
+  if (fetchError || !ad) {
+    throw new Error("Anuncio no encontrado.");
+  }
+
+  if (ad.user_id !== user.id) {
+    throw new Error("No tienes permiso para modificar este anuncio.");
+  }
+
+  const { error } = await supabase
+    .from('ads')
+    .update({ active: !currentState })
+    .eq('id', adId);
+
+  if (error) {
+    throw new Error("No se pudo actualizar el estado del anuncio.");
+  }
+
+  revalidatePath('/dashboard');
+  revalidatePath('/'); // Also revalidate home page in case the ad was visible there
+}
