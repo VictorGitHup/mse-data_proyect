@@ -7,10 +7,12 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 export default function Login() {
   const supabase = createSupabaseBrowserClient();
   const router = useRouter()
+  const { toast } = useToast();
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [view, setView] = useState('sign_in')
@@ -35,8 +37,11 @@ export default function Login() {
     });
     
     if (error) {
-        console.error("Sign in error:", error.message);
-        // You can also show a toast notification here
+        toast({
+            title: "Error al iniciar sesión",
+            description: "Credenciales inválidas. Por favor, inténtalo de nuevo.",
+            variant: "destructive",
+        });
     } else {
         router.push('/account');
         router.refresh();
