@@ -8,20 +8,21 @@ import { useEffect, useState } from "react";
 import type { User } from "@supabase/supabase-js";
 import { useRouter } from "next/navigation";
 
-export default function Header() {
-  const [user, setUser] = useState<User | null>(null);
+interface HeaderProps {
+  user: User | null;
+}
+
+export default function Header({ user: initialUser }: HeaderProps) {
+  const [user, setUser] = useState<User | null>(initialUser);
   const supabase = createSupabaseBrowserClient();
   const router = useRouter();
 
   useEffect(() => {
-    const getUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      setUser(user);
-    };
-    getUser();
-
     const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
       setUser(session?.user ?? null);
+      if (event === 'SIGNED_IN') {
+        router.refresh();
+      }
       if (event === 'SIGNED_OUT') {
         router.push('/');
         router.refresh();
