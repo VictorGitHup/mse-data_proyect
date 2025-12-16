@@ -1,3 +1,5 @@
+const path = require('path')
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   typescript: {
@@ -28,13 +30,25 @@ const nextConfig = {
       },
     ],
   },
-  transpilePackages: ['@supabase/supabase-js'],
-  webpack: (config) => {
+  transpilePackages: ['@supabase/supabase-js', '@supabase/ssr'],
+  webpack: (config, { buildId, dev, isServer, defaultLoaders, webpack }) => {
+    // Resolver alias específico para el problema
     config.resolve.alias = {
       ...config.resolve.alias,
-      '../module/index.js': '@supabase/supabase-js/dist/module/index.mjs'
-    };
-    return config;
+      '@supabase/supabase-js': path.resolve(__dirname, 'node_modules/@supabase/supabase-js'),
+    }
+    
+    // Manejar módulos ES6
+    config.module.rules.push({
+      test: /\.mjs$/,
+      include: /node_modules/,
+      type: 'javascript/auto',
+      resolve: {
+        fullySpecified: false
+      }
+    })
+    
+    return config
   }
 };
 
