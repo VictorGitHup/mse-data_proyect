@@ -80,7 +80,7 @@ export default function AccountForm({ user, profile }: AccountFormProps) {
         <CardContent className="space-y-4">
           <div>
             <Label htmlFor="email">Email</Label>
-            <Input id="email" type="email" value={user.email} disabled />
+            <Input id="email" type="email" value={user?.email || ""} disabled />
           </div>
           <div>
             <Label htmlFor="username">Nombre de usuario</Label>
