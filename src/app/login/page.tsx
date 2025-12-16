@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 
 export default function Login() {
   const supabase = createSupabaseBrowserClient();
@@ -16,6 +17,7 @@ export default function Login() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [view, setView] = useState('sign_in')
+  const [role, setRole] = useState<'USER' | 'ADVERTISER'>('USER');
 
   const handleSignUp = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -24,6 +26,11 @@ export default function Login() {
       password,
       options: {
         emailRedirectTo: `${location.origin}/auth/callback`,
+        data: {
+          role: role,
+          username: email.split('@')[0], // Default username
+          avatar_url: `https://api.dicebear.com/8.x/identicon/svg?seed=${email}`
+        }
       },
     })
     setView('check_email')
@@ -31,7 +38,7 @@ export default function Login() {
 
   const handleSignIn = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const { error } = await supabase.auth.signInWithPassword({
+    const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
@@ -42,8 +49,28 @@ export default function Login() {
             description: "Credenciales inválidas. Por favor, inténtalo de nuevo.",
             variant: "destructive",
         });
-    } else {
-        router.push('/account');
+    } else if (data.user) {
+        const { data: profile, error: profileError } = await supabase
+            .from('profiles')
+            .select('role')
+            .eq('id', data.user.id)
+            .single();
+
+        if (profileError) {
+             toast({
+                title: "Error al obtener el perfil",
+                description: "No se pudo encontrar tu perfil. Por favor, contacta a soporte.",
+                variant: "destructive",
+            });
+            await supabase.auth.signOut(); // Log out user if profile is missing
+            return;
+        }
+        
+        if (profile?.role === 'ADVERTISER') {
+            router.push('/dashboard');
+        } else {
+            router.push('/');
+        }
         router.refresh();
     }
   }
@@ -53,62 +80,94 @@ export default function Login() {
       <div className="w-full max-w-md p-8 rounded-lg shadow-md bg-card">
         {view === 'check_email' ? (
           <p className="text-center text-foreground">
-            Check <span className="font-bold">{email}</span> to continue signing up
+            Revisa tu correo <span className="font-bold">{email}</span> para continuar con el registro.
           </p>
         ) : (
           <form
-            className="flex-1 flex flex-col w-full justify-center gap-2 text-foreground"
+            className="flex-1 flex flex-col w-full justify-center gap-4 text-foreground"
             onSubmit={view === 'sign_in' ? handleSignIn : handleSignUp}
           >
             <h1 className="text-2xl font-bold mb-4 text-center">
               {view === 'sign_in' ? 'Iniciar Sesión' : 'Crear Cuenta'}
             </h1>
-            <Label htmlFor="email">
-              Email
-            </Label>
-            <Input
-              id="email"
-              name="email"
-              onChange={(e) => setEmail(e.target.value)}
-              value={email}
-              placeholder="you@example.com"
-            />
-            <Label htmlFor="password">
-              Password
-            </Label>
-            <Input
-              id="password"
-              type="password"
-              name="password"
-              onChange={(e) => setPassword(e.target.value)}
-              value={password}
-              placeholder="••••••••"
-            />
+            
+            <div className="space-y-2">
+                <Label htmlFor="email">
+                Email
+                </Label>
+                <Input
+                id="email"
+                name="email"
+                onChange={(e) => setEmail(e.target.value)}
+                value={email}
+                placeholder="you@example.com"
+                required
+                />
+            </div>
+            <div className="space-y-2">
+                <Label htmlFor="password">
+                Contraseña
+                </Label>
+                <Input
+                id="password"
+                type="password"
+                name="password"
+                onChange={(e) => setPassword(e.target.value)}
+                value={password}
+                placeholder="••••••••"
+                required
+                />
+            </div>
+
+            {view === 'sign_up' && (
+              <div className="space-y-3">
+                <Label>Quiero registrarme como:</Label>
+                <RadioGroup
+                  value={role}
+                  onValueChange={(value: 'USER' | 'ADVERTISER') => setRole(value)}
+                  className="flex items-center gap-6"
+                >
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="USER" id="role-user" />
+                    <Label htmlFor="role-user" className="font-normal">
+                      Usuario
+                    </Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="ADVERTISER" id="role-advertiser" />
+                    <Label htmlFor="role-advertiser" className="font-normal">
+                      Anunciante
+                    </Label>
+                  </div>
+                </RadioGroup>
+              </div>
+            )}
+
             {view === 'sign_in' ? (
               <>
-                <Button type="submit">Sign In</Button>
+                <Button type="submit" className="mt-4">Iniciar Sesión</Button>
                 <p className="text-sm text-center">
-                  Don't have an account?
+                  ¿No tienes una cuenta?
                   <button
                     type="button"
-                    className="ml-1 underline"
+                    className="ml-1 underline font-semibold"
                     onClick={() => setView('sign_up')}
                   >
-                    Sign Up Now
+                    Regístrate ahora
                   </button>
                 </p>
               </>
             ) : (
                <>
-                <Button type="submit">Sign Up</Button>
+                <Button type="submit" className="mt-4">Crear Cuenta</Button>
                 <p className="text-sm text-center">
-                  Already have an account?
+                  ¿Ya tienes una cuenta?
                   <button
                     type="button"
-                    className="ml-1 underline"
+                    className="ml-1 underline font-semibold"
                     onClick={() => setView('sign_in')}
                   >
-                    Sign In Now
+                    Inicia sesión
                   </button>
                 </p>
               </>
