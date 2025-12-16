@@ -18,7 +18,7 @@ export default async function AccountPage() {
     .eq("id", user.id)
     .single();
 
-  if (error && error.status !== 406) {
+  if (error && error.code !== 'PGRST116') {
     console.error("Error fetching profile:", error);
     // Optionally, you can redirect to an error page or show a message
   }
