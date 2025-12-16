@@ -1,8 +1,12 @@
 
+"use client";
+
+import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import Image from 'next/image';
-import { createSupabaseServerClient } from '@/lib/supabase/server';
+import { createSupabaseBrowserClient } from '@/lib/supabase/client';
+import { Skeleton } from '@/components/ui/skeleton';
 
 // Define the type for an Ad, based on your SQL schema
 type Ad = {
@@ -14,21 +18,29 @@ type Ad = {
   created_at: string;
 };
 
-export default async function Home() {
-  const supabase = createSupabaseServerClient();
-  
-  // Fetching from the 'ads' table on the server
-  const { data: ads, error } = await supabase
-    .from('ads')
-    .select('*')
-    .order('created_at', { ascending: false }); // Show newest first
+export default function Home() {
+  const supabase = createSupabaseBrowserClient();
+  const [ads, setAds] = useState<Ad[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  if (error) {
-    console.error('Error fetching ads:', error);
-    // You might want to render an error state here
-  }
+  useEffect(() => {
+    const fetchAds = async () => {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('ads')
+        .select('*')
+        .order('created_at', { ascending: false });
 
-  const adsList: Ad[] = ads || [];
+      if (error) {
+        console.error('Error fetching ads:', error);
+      } else {
+        setAds(data || []);
+      }
+      setLoading(false);
+    };
+
+    fetchAds();
+  }, [supabase]);
 
   return (
     <main className="container mx-auto p-4 md:p-8">
@@ -41,9 +53,29 @@ export default async function Home() {
         </p>
       </header>
 
-      {adsList.length > 0 ? (
+      {loading ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          {adsList.map((ad) => (
+          {Array.from({ length: 8 }).map((_, index) => (
+            <Card key={index} className="overflow-hidden flex flex-col">
+              <Skeleton className="h-48 w-full" />
+              <CardHeader>
+                <Skeleton className="h-6 w-3/4" />
+                <Skeleton className="h-4 w-1/2 mt-2" />
+              </CardHeader>
+              <CardContent className="flex-grow space-y-2">
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-4 w-2/3" />
+              </CardContent>
+              <div className="p-4 pt-0">
+                <Skeleton className="h-6 w-20" />
+              </div>
+            </Card>
+          ))}
+        </div>
+      ) : ads.length > 0 ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+          {ads.map((ad) => (
             <Card key={ad.id} className="overflow-hidden flex flex-col">
               <div className="relative w-full h-48">
                  <Image
