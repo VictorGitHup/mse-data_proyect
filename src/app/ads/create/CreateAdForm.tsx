@@ -96,7 +96,7 @@ export default function CreateAdForm() {
             <Label htmlFor="location_country">País</Label>
             <Input 
               id="location_country" 
-              name="location_country" 
+              name="location_country" _
               placeholder="Ej: España" 
               required 
               aria-describedby="country-error"
