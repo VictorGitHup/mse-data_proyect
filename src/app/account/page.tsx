@@ -20,7 +20,8 @@ export default async function AccountPage() {
 
   if (error && error.code !== 'PGRST116') {
     console.error("Error fetching profile:", error);
-    // Optionally, you can redirect to an error page or show a message
+    // This will be caught by the nearest error.js boundary
+    throw new Error("Could not fetch user profile.");
   }
 
   return <AccountForm user={user} profile={profile} />;
