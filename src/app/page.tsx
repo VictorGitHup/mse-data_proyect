@@ -6,6 +6,10 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 
+type Profile = {
+  username: string;
+};
+
 type Ad = {
   id: number;
   title: string;
@@ -13,13 +17,14 @@ type Ad = {
   location_city: string;
   location_country: string;
   created_at: string;
+  profiles: Profile | null;
 };
 
 async function AdGrid() {
   const supabase = await createSupabaseServerClient();
   const { data: ads, error } = await supabase
     .from('ads')
-    .select('*')
+    .select('*, profiles ( username )')
     .order('created_at', { ascending: false });
 
   if (error) {
@@ -40,7 +45,7 @@ async function AdGrid() {
 
   return (
     <>
-      {ads.map((ad) => (
+      {(ads as Ad[]).map((ad) => (
         <Card key={ad.id} className="overflow-hidden flex flex-col">
           <div className="relative w-full h-48">
              <Image
@@ -54,7 +59,7 @@ async function AdGrid() {
           <CardHeader>
             <CardTitle className="truncate">{ad.title}</CardTitle>
             <CardDescription className="text-sm text-muted-foreground">
-              {ad.location_city}, {ad.location_country}
+              Por {ad.profiles?.username || 'Anónimo'} en {ad.location_city}, {ad.location_country}
             </CardDescription>
           </CardHeader>
           <CardContent className="flex-grow">
