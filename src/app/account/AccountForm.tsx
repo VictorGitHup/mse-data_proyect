@@ -7,7 +7,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useToast } from "@/hooks/use-toast";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import type { User } from "@supabase/supabase-js";
@@ -111,27 +110,9 @@ export default function AccountForm({ user, profile }: AccountFormProps) {
               disabled={loading}
             />
           </div>
-          <div className="space-y-3">
-            <Label>Tu Rol</Label>
-            <RadioGroup
-              value={role}
-              onValueChange={(value: "USER" | "ADVERTISER") => setRole(value)}
-              className="flex items-center gap-6"
-              disabled={loading}
-            >
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="USER" id="role-user" />
-                <Label htmlFor="role-user" className="font-normal">
-                  Usuario
-                </Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="ADVERTISER" id="role-advertiser" />
-                <Label htmlFor="role-advertiser" className="font-normal">
-                  Anunciante
-                </Label>
-              </div>
-            </RadioGroup>
+          <div className="space-y-2">
+            <Label htmlFor="role">Tu Rol</Label>
+            <Input id="role" type="text" value={role === 'ADVERTISER' ? 'Anunciante' : 'Usuario'} disabled />
           </div>
           <div>
             <Button onClick={updateProfile} disabled={loading} className="w-full">
