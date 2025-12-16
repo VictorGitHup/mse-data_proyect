@@ -19,13 +19,12 @@ export default function SignupPage() {
   }, [session, router]);
 
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      setRedirectUrl(`${window.location.origin}/auth/callback`);
-    }
+    // This is safe because it's in a useEffect, which only runs on the client.
+    setRedirectUrl(`${window.location.origin}/auth/callback`);
   }, []);
 
-  if (!redirectUrl) {
-    return null; // O un spinner de carga
+  if (session || !redirectUrl) {
+    return null; // Or a loading spinner while redirecting or setting url
   }
 
   return (
