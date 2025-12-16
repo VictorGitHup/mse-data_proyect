@@ -2,6 +2,7 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect } from "react";
 import { Button } from "./ui/button";
 import { User as UserIcon } from 'lucide-react';
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
@@ -21,6 +22,20 @@ export default function Header({ user }: HeaderProps) {
     router.push('/');
     router.refresh();
   };
+
+  useEffect(() => {
+    // This effect can help react to auth changes that happen client-side
+    // For example, if a token expires and the user is logged out automatically.
+    // The router.refresh() ensures server components re-fetch data with the new auth state.
+    const { data: { subscription } } = createSupabaseBrowserClient().auth.onAuthStateChange(() => {
+        router.refresh();
+    });
+
+    return () => {
+        subscription.unsubscribe();
+    };
+}, [router]);
+
 
   return (
     <header className="bg-card border-b">
