@@ -87,10 +87,7 @@ export default function Login() {
                   <button
                     type="button"
                     className="ml-1 underline"
-                    onClick={() => {
-                      setView('sign_up');
-                      router.push('/signup');
-                    }}
+                    onClick={() => setView('sign_up')}
                   >
                     Sign Up Now
                   </button>
@@ -104,10 +101,7 @@ export default function Login() {
                   <button
                     type="button"
                     className="ml-1 underline"
-                    onClick={() => {
-                      setView('sign_in');
-                      router.push('/login');
-                    }}
+                    onClick={() => setView('sign_in')}
                   >
                     Sign In Now
                   </button>

@@ -36,6 +36,9 @@ export default function AccountForm({ user, profile }: AccountFormProps) {
     if (profile) {
       setUsername(profile.username || "");
       setAvatarUrl(profile.avatar_url || "");
+    } else {
+      setUsername("");
+      setAvatarUrl("");
     }
   }, [profile]);
 

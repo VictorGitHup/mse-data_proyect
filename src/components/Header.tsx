@@ -7,7 +7,6 @@ import { User as UserIcon } from 'lucide-react';
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import type { User } from "@supabase/supabase-js";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
 
 interface HeaderProps {
   user: User | null;
@@ -22,19 +21,6 @@ export default function Header({ user }: HeaderProps) {
     router.push('/');
     router.refresh();
   };
-
-  useEffect(() => {
-    const {
-      data: { subscription },
-    } = createSupabaseBrowserClient().auth.onAuthStateChange(() => {
-      router.refresh();
-    });
-
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, [router]);
-
 
   return (
     <header className="bg-card border-b">
@@ -60,7 +46,7 @@ export default function Header({ user }: HeaderProps) {
               <Link href="/login">
                 <Button variant="ghost">Login</Button>
               </Link>
-              <Link href="/signup">
+              <Link href="/login">
                 <Button>Sign Up</Button>
               </Link>
             </>
