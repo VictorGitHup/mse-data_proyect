@@ -1,26 +1,29 @@
 "use client";
 
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
-
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { useApp } from '@/components/AppProvider';
+import { createSupabaseBrowserClient } from '@/lib/supabase/client';
+
 
 export default function Signup() {
-  const { supabase, session } = useApp();
+  const supabase = createSupabaseBrowserClient();
   const router = useRouter()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [view, setView] = useState('sign_up')
 
   useEffect(() => {
-    if (session) {
-      router.push('/account');
-    }
-  }, [session, router]);
+    const checkSession = async () => {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+            router.push('/account');
+        }
+    };
+    checkSession();
+  }, [supabase, router]);
   
   const handleSignUp = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();

@@ -1,7 +1,5 @@
-import type {NextConfig} from 'next';
-
-const nextConfig: NextConfig = {
-  /* config options here */
+/** @type {import('next').NextConfig} */
+const nextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
@@ -30,6 +28,14 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  transpilePackages: ['@supabase/supabase-js'],
+  webpack: (config) => {
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      '../module/index.js': '@supabase/supabase-js/dist/module/index.mjs'
+    };
+    return config;
+  }
 };
 
-export default nextConfig;
+module.exports = nextConfig;

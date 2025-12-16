@@ -2,10 +2,10 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useApp } from '@/components/AppProvider';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import Image from 'next/image';
+import { createSupabaseBrowserClient } from '@/lib/supabase/client';
 
 // Define the type for an Ad, based on your SQL schema
 type Ad = {
@@ -18,7 +18,7 @@ type Ad = {
 };
 
 export default function Home() {
-  const { supabase } = useApp();
+  const supabase = createSupabaseBrowserClient();
   const [ads, setAds] = useState<Ad[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -38,11 +38,7 @@ export default function Home() {
       setLoading(false);
     }
     
-    // The AppProvider needs a moment to initialize the Supabase client.
-    // We check for its existence before fetching.
-    if (supabase) {
-      fetchAds();
-    }
+    fetchAds();
   }, [supabase]);
 
   return (

@@ -1,12 +1,37 @@
 "use client";
 
 import Link from "next/link";
-import { useApp } from "./AppProvider";
 import { Button } from "./ui/button";
 import { User as UserIcon } from 'lucide-react';
+import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import { useEffect, useState } from "react";
+import type { User } from "@supabase/supabase-js";
+import { useRouter } from "next/navigation";
 
 export default function Header() {
-  const { session, user, supabase } = useApp();
+  const [user, setUser] = useState<User | null>(null);
+  const supabase = createSupabaseBrowserClient();
+  const router = useRouter();
+
+  useEffect(() => {
+    const getUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setUser(user);
+    };
+    getUser();
+
+    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+      setUser(session?.user ?? null);
+      if (event === 'SIGNED_OUT') {
+        router.push('/');
+        router.refresh();
+      }
+    });
+
+    return () => {
+      authListener.subscription.unsubscribe();
+    };
+  }, [supabase, router]);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();

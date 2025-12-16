@@ -2,12 +2,14 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useApp } from "@/components/AppProvider";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
+import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import type { User } from "@supabase/supabase-js";
+
 
 type Profile = {
   id: string;
@@ -17,31 +19,36 @@ type Profile = {
 } | null;
 
 export default function AccountPage() {
-  const { session, user, supabase } = useApp();
+  const supabase = createSupabaseBrowserClient();
   const router = useRouter();
   const { toast } = useToast();
 
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<Profile>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [username, setUsername] = useState("");
   const [avatarUrl, setAvatarUrl] = useState("");
 
   useEffect(() => {
-    if (!session) {
-      router.push("/login");
-    } else {
-      getProfile();
-    }
-  }, [session, router]);
+    const checkSessionAndGetProfile = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        router.push("/login");
+      } else {
+        setUser(user);
+        getProfile(user.id);
+      }
+    };
+    checkSessionAndGetProfile();
+  }, [supabase, router]);
 
-  async function getProfile() {
-    if (!user) return;
+  async function getProfile(userId: string) {
     try {
       setLoading(true);
       const { data, error, status } = await supabase
         .from("profiles")
         .select(`*`)
-        .eq("id", user.id)
+        .eq("id", userId)
         .single();
 
       if (error && status !== 406) {
@@ -84,7 +91,7 @@ export default function AccountPage() {
         title: "¡Éxito!",
         description: "Tu perfil ha sido actualizado.",
       });
-      getProfile(); // Refresh profile data
+      getProfile(user.id); // Refresh profile data
     } catch (error: any) {
       toast({
         title: "Error actualizando perfil",
@@ -96,7 +103,7 @@ export default function AccountPage() {
     }
   }
 
-  if (!session || !user) {
+  if (!user) {
     return null; // Or a loading spinner
   }
 
