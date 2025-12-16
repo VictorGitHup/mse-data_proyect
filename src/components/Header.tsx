@@ -3,11 +3,10 @@
 import Link from "next/link";
 import { useApp } from "./AppProvider";
 import { Button } from "./ui/button";
-import { supabase } from "@/lib/supabase";
 import { User as UserIcon } from 'lucide-react';
 
 export default function Header() {
-  const { session, user } = useApp();
+  const { session, user, supabase } = useApp();
 
   const handleLogout = async () => {
     await supabase.auth.signOut();

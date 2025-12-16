@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useApp } from "@/components/AppProvider";
-import { supabase } from "@/lib/supabase";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -18,7 +17,7 @@ type Profile = {
 } | null;
 
 export default function AccountPage() {
-  const { session, user } = useApp();
+  const { session, user, supabase } = useApp();
   const router = useRouter();
   const { toast } = useToast();
 

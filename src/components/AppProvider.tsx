@@ -1,12 +1,13 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState } from "react";
-import { supabase } from "@/lib/supabase";
-import type { Session, User } from "@supabase/supabase-js";
+import type { Session, SupabaseClient, User } from "@supabase/supabase-js";
 import { useRouter } from "next/navigation";
+import { createSupabaseBrowserClient } from "@/lib/supabase";
 
 // Define the context shape
 interface AppContextType {
+  supabase: SupabaseClient;
   session: Session | null;
   user: User | null;
 }
@@ -16,15 +17,18 @@ export const AppContext = createContext<AppContextType | undefined>(undefined);
 
 // Create the provider component
 export default function AppProvider({ children }: { children: React.ReactNode }) {
+  const [supabase] = useState(() => createSupabaseBrowserClient());
   const [session, setSession] = useState<Session | null>(null);
   const user = session?.user ?? null;
   const router = useRouter();
 
   useEffect(() => {
     // Fetch the initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-    });
+    const getSession = async () => {
+      const { data } = await supabase.auth.getSession();
+      setSession(data.session);
+    }
+    getSession();
 
     // Listen for auth state changes
     const { data: authListener } = supabase.auth.onAuthStateChange(
@@ -44,9 +48,10 @@ export default function AppProvider({ children }: { children: React.ReactNode })
     return () => {
       authListener.subscription.unsubscribe();
     };
-  }, [router]);
+  }, [supabase, router]);
 
   const value = {
+    supabase,
     session,
     user,
   };

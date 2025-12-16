@@ -1,44 +1,123 @@
 "use client";
 
-import { Auth } from "@supabase/auth-ui-react";
-import { ThemeSupa } from "@supabase/auth-ui-shared";
-import { supabase } from "@/lib/supabase";
-import { useApp } from "@/components/AppProvider";
-import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import { useRouter } from 'next/navigation'
+import { useEffect, useState } from 'react'
 
-export default function SignupPage() {
-  const { session } = useApp();
-  const router = useRouter();
-  const [redirectUrl, setRedirectUrl] = useState('');
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { useApp } from '@/components/AppProvider';
+
+export default function Signup() {
+  const { supabase, session } = useApp();
+  const router = useRouter()
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [view, setView] = useState('sign_up')
 
   useEffect(() => {
     if (session) {
-      router.push("/account");
+      router.push('/account');
     }
   }, [session, router]);
+  
+  const handleSignUp = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        emailRedirectTo: `${location.origin}/auth/callback`,
+      },
+    })
+    setView('check_email')
+  }
 
-  useEffect(() => {
-    // This is safe because it's in a useEffect, which only runs on the client.
-    setRedirectUrl(`${window.location.origin}/auth/callback`);
-  }, []);
-
-  if (session || !redirectUrl) {
-    return null; // Or a loading spinner while redirecting or setting url
+  const handleSignIn = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    await supabase.auth.signInWithPassword({
+      email,
+      password,
+    })
+    router.push('/account');
+    router.refresh();
   }
 
   return (
     <div className="flex justify-center items-center h-[calc(100vh-80px)]">
       <div className="w-full max-w-md p-8 rounded-lg shadow-md bg-card">
-        <h1 className="text-2xl font-bold mb-4 text-center">Crear Cuenta</h1>
-        <Auth
-          supabaseClient={supabase}
-          appearance={{ theme: ThemeSupa }}
-          view="sign_up"
-          providers={['google', 'github']}
-          redirectTo={redirectUrl}
-        />
+        {view === 'check_email' ? (
+          <p className="text-center text-foreground">
+            Check <span className="font-bold">{email}</span> to continue signing up
+          </p>
+        ) : (
+          <form
+            className="flex-1 flex flex-col w-full justify-center gap-2 text-foreground"
+            onSubmit={view === 'sign_up' ? handleSignUp : handleSignIn}
+          >
+            <h1 className="text-2xl font-bold mb-4 text-center">
+              {view === 'sign_up' ? 'Crear Cuenta' : 'Iniciar Sesión'}
+            </h1>
+            <Label htmlFor="email">
+              Email
+            </Label>
+            <Input
+              id="email"
+              name="email"
+              onChange={(e) => setEmail(e.target.value)}
+              value={email}
+              placeholder="you@example.com"
+            />
+            <Label htmlFor="password">
+              Password
+            </Label>
+            <Input
+              id="password"
+              type="password"
+              name="password"
+              onChange={(e) => setPassword(e.target.value)}
+              value={password}
+              placeholder="••••••••"
+            />
+            {view === 'sign_up' ? (
+              <>
+                <Button type="submit">Sign Up</Button>
+                <p className="text-sm text-center">
+                  Already have an account?
+                  <button
+                    type="button"
+                    className="ml-1 underline"
+                    onClick={() => {
+                        setView('sign_in');
+                        router.push('/login');
+                    }}
+                  >
+                    Sign In Now
+                  </button>
+                </p>
+              </>
+            ) : (
+              <>
+                <Button type="submit">Sign In</Button>
+                <p className="text-sm text-center">
+                  Don't have an account?
+                  <button
+                    type="button"
+                    className="ml-1 underline"
+                    onClick={() => {
+                        setView('sign_up');
+                        router.push('/signup');
+                    }}
+                  >
+                    Sign Up Now
+                  </button>
+                </p>
+              </>
+            )}
+          </form>
+        )}
       </div>
     </div>
-  );
+  )
 }

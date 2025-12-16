@@ -2,7 +2,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { supabase } from '@/lib/supabase';
+import { useApp } from '@/components/AppProvider';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import Image from 'next/image';
@@ -18,6 +18,7 @@ type Ad = {
 };
 
 export default function Home() {
+  const { supabase } = useApp();
   const [ads, setAds] = useState<Ad[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -38,7 +39,7 @@ export default function Home() {
     }
 
     fetchAds();
-  }, []);
+  }, [supabase]);
 
   return (
     <main className="container mx-auto p-4 md:p-8">
