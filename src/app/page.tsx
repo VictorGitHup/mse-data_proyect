@@ -37,8 +37,12 @@ export default function Home() {
       }
       setLoading(false);
     }
-
-    fetchAds();
+    
+    // The AppProvider needs a moment to initialize the Supabase client.
+    // We check for its existence before fetching.
+    if (supabase) {
+      fetchAds();
+    }
   }, [supabase]);
 
   return (
