@@ -16,7 +16,7 @@ type Ad = {
 };
 
 async function AdGrid() {
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
   const { data: ads, error } = await supabase
     .from('ads')
     .select('*')
