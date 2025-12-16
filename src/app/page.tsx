@@ -1,14 +1,10 @@
 
-"use client";
-
-import { useEffect, useState } from 'react';
+import Image from 'next/image';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import Image from 'next/image';
-import { createSupabaseBrowserClient } from '@/lib/supabase/client';
 import { Skeleton } from '@/components/ui/skeleton';
+import { createSupabaseServerClient } from '@/lib/supabase/server';
 
-// Define the type for an Ad, based on your SQL schema
 type Ad = {
   id: number;
   title: string;
@@ -18,29 +14,19 @@ type Ad = {
   created_at: string;
 };
 
-export default function Home() {
-  const supabase = createSupabaseBrowserClient();
-  const [ads, setAds] = useState<Ad[]>([]);
-  const [loading, setLoading] = useState(true);
+export default async function Home() {
+  const supabase = createSupabaseServerClient();
+  const { data: ads, error } = await supabase
+    .from('ads')
+    .select('*')
+    .order('created_at', { ascending: false });
 
-  useEffect(() => {
-    const fetchAds = async () => {
-      setLoading(true);
-      const { data, error } = await supabase
-        .from('ads')
-        .select('*')
-        .order('created_at', { ascending: false });
+  if (error) {
+    console.error('Error fetching ads:', error);
+    // You could return an error message component here
+  }
 
-      if (error) {
-        console.error('Error fetching ads:', error);
-      } else {
-        setAds(data || []);
-      }
-      setLoading(false);
-    };
-
-    fetchAds();
-  }, [supabase]);
+  const loading = !ads;
 
   return (
     <main className="container mx-auto p-4 md:p-8">
@@ -73,7 +59,7 @@ export default function Home() {
             </Card>
           ))}
         </div>
-      ) : ads.length > 0 ? (
+      ) : ads && ads.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
           {ads.map((ad) => (
             <Card key={ad.id} className="overflow-hidden flex flex-col">
