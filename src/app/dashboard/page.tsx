@@ -3,6 +3,65 @@ import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { format } from 'date-fns';
+
+type Ad = {
+  id: number;
+  title: string;
+  created_at: string;
+  active: boolean;
+};
+
+async function AdvertiserAds({ userId }: { userId: string }) {
+  const supabase = await createSupabaseServerClient();
+  const { data: ads, error } = await supabase
+    .from('ads')
+    .select('id, title, created_at, active')
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    throw new Error('No se pudieron cargar tus anuncios. Por favor, inténtalo de nuevo.');
+  }
+
+  if (ads.length === 0) {
+    return (
+      <div className="border-2 border-dashed rounded-lg p-16 text-center">
+        <h2 className="text-2xl font-semibold">Tus Anuncios</h2>
+        <p className="text-muted-foreground mt-2">
+          Aquí aparecerán los anuncios que has creado. ¡Empieza creando uno nuevo!
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      {(ads as Ad[]).map((ad) => (
+        <Card key={ad.id}>
+          <CardHeader>
+            <CardTitle className="truncate">{ad.title}</CardTitle>
+            <CardDescription>
+              Creado el {format(new Date(ad.created_at), 'dd/MM/yyyy')}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex justify-between items-center">
+              <Badge variant={ad.active ? 'secondary' : 'destructive'}>
+                {ad.active ? 'Activo' : 'Inactivo'}
+              </Badge>
+              <Button variant="outline" size="sm" asChild>
+                <Link href={`/ads/${ad.id}/manage`}>Gestionar</Link>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      ))}
+    </div>
+  );
+}
 
 export default async function DashboardPage() {
   const supabase = await createSupabaseServerClient();
@@ -41,12 +100,9 @@ export default async function DashboardPage() {
                 <Button>Crear Nuevo Anuncio</Button>
             </Link>
         </header>
-        <div className="border-2 border-dashed rounded-lg p-16 text-center">
-            <h2 className="text-2xl font-semibold">Tus Anuncios</h2>
-            <p className="text-muted-foreground mt-2">
-                Aquí aparecerán los anuncios que has creado. ¡Empieza creando uno nuevo!
-            </p>
-        </div>
+        
+        <AdvertiserAds userId={user.id} />
+
     </div>
   );
 }
