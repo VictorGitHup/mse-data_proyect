@@ -21,7 +21,7 @@ type Ad = {
 };
 
 async function AdGrid() {
-  const supabase = await createSupabaseServerClient();
+  const supabase = createSupabaseServerClient();
   const { data: ads, error } = await supabase
     .from('ads')
     .select('*, profiles ( username )')
@@ -101,7 +101,7 @@ function AdGridSkeleton() {
 }
 
 
-export default function Home() {
+export default async function Home() {
   return (
     <main className="container mx-auto p-4 md:p-8">
       <header className="text-center mb-12">

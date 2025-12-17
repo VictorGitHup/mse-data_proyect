@@ -69,7 +69,7 @@ async function DashboardData() {
 }
 
 
-export default function DashboardPage() {
+export default async function DashboardPage() {
   return (
     <div className="container mx-auto p-4 md:p-8">
         <header className="flex justify-between items-center mb-12">

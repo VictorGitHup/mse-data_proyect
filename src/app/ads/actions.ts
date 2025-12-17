@@ -22,7 +22,7 @@ export async function createAd(
   prevState: FormState,
   formData: FormData
 ): Promise<FormState> {
-  const supabase = await createSupabaseServerClient();
+  const supabase = createSupabaseServerClient();
   
   const { data: { user } } = await supabase.auth.getUser();
 
@@ -80,7 +80,7 @@ export async function createAd(
 }
 
 export async function toggleAdStatus(adId: number, currentState: boolean) {
-  const supabase = await createSupabaseServerClient();
+  const supabase = createSupabaseServerClient();
 
   const { data: { user } } = await supabase.auth.getUser();
 

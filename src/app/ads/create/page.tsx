@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/card"
 
 export default async function CreateAdPage() {
-  const supabase = await createSupabaseServerClient();
+  const supabase = createSupabaseServerClient();
 
   const { data: { user } } = await supabase.auth.getUser();
 

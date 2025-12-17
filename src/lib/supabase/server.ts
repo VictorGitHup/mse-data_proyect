@@ -2,6 +2,7 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 
+// Síncrono: para Server Actions y Route Handlers
 export function createSupabaseServerClient() {
   const cookieStore = cookies()
 

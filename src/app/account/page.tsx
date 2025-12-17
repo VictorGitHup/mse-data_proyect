@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import AccountForm from "./AccountForm";
 
 export default async function AccountPage() {
-  const supabase = await createSupabaseServerClient();
+  const supabase = createSupabaseServerClient();
 
   const { data: { user } } = await supabase.auth.getUser();
 
