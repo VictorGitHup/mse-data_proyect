@@ -73,22 +73,12 @@ export async function register(formData: FormData) {
   }
 
   const { email, password, username, full_name, role } = validation.data;
-
-  // Check if username is already taken (server-side)
-  const { data: existingProfile } = await supabase
-    .from('profiles')
-    .select('username')
-    .eq('username', username)
-    .maybeSingle();
-
-  if (existingProfile) {
-    return { error: `El nombre de usuario "${username}" ya está en uso.` };
-  }
   
   const { data: authData, error: authError } = await supabase.auth.signUp({
     email,
     password,
     options: {
+      // These metadata will be used by the DB trigger to create the profile
       data: {
         username,
         full_name,
@@ -98,7 +88,11 @@ export async function register(formData: FormData) {
   });
 
   if (authError) {
-    if (authError.message.includes('User already registered')) {
+    // The DB trigger handles username uniqueness, so signUp might fail if username is taken.
+    if (authError.message.includes('duplicate key value violates unique constraint "profiles_username_key"')) {
+        return { error: `El nombre de usuario "${username}" ya está en uso.` };
+    }
+     if (authError.message.includes('User already registered')) {
         const { error: resendError } = await supabase.auth.resend({
             type: 'signup',
             email: email,
@@ -110,6 +104,7 @@ export async function register(formData: FormData) {
 
         return redirect('/auth/login?message=Ya existe una cuenta con este correo. Hemos reenviado el email de confirmación.');
     }
+    // Generic error for other database issues during user creation (like the trigger failing)
     return { error: `Error al crear el usuario: ${authError.message}` };
   }
   
