@@ -1,4 +1,3 @@
-
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import CreateAdForm from "./CreateAdForm";
