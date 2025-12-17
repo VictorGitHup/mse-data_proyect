@@ -1,6 +1,8 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 
+// This client is for SERVER-SIDE use in synchronous contexts like
+// Server Actions and Route Handlers. It does NOT use 'await'.
 export function createSupabaseServerClient() {
   const cookieStore = cookies()
 
