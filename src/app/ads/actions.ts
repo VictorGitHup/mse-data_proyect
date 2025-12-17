@@ -9,8 +9,10 @@ import { revalidatePath } from 'next/cache';
 const adSchema = z.object({
   title: z.string().min(3, 'El título debe tener al menos 3 caracteres.'),
   description: z.string().min(10, 'La descripción debe tener al menos 10 caracteres.'),
-  location_city: z.string().min(2, 'La ciudad debe tener al menos 2 caracteres.'),
-  location_country: z.string().min(2, 'El país debe tener al menos 2 caracteres.'),
+  category_id: z.string().nonempty('Debes seleccionar una categoría.'),
+  country: z.string().nonempty('Debes seleccionar un país.'),
+  region: z.string().nonempty('Debes seleccionar una región.'),
+  subregion: z.string().nonempty('Debes seleccionar una subregión.'),
 });
 
 export type FormState = {
@@ -46,7 +48,8 @@ export async function createAd(
     };
   }
 
-  const validatedFields = adSchema.safeParse(Object.fromEntries(formData.entries()));
+  const rawFormData = Object.fromEntries(formData.entries());
+  const validatedFields = adSchema.safeParse(rawFormData);
 
   if (!validatedFields.success) {
     return {
@@ -55,15 +58,15 @@ export async function createAd(
     };
   }
 
-  const { title, description, location_city, location_country } = validatedFields.data;
+  const { title, description, category_id, country, region, subregion } = validatedFields.data;
 
   const { error } = await supabase.from('ads').insert({
     user_id: user.id,
     title,
     description,
-    location_city,
-    location_country,
-    category_id: 1,
+    category_id: parseInt(category_id, 10),
+    location_country: country,
+    location_city: `${subregion}, ${region}` // Combining for simplicity until schema is updated
   });
 
   if (error) {
