@@ -12,17 +12,34 @@ export async function login(formData: FormData) {
   const email = String(formData.get('email'));
   const password = String(formData.get('password'));
 
-  const { error } = await supabase.auth.signInWithPassword({
+  const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
     email,
     password,
   });
 
-  if (error) {
+  if (authError || !authData.user) {
     return redirect(`/auth/login?message=Error: Las credenciales son inválidas.`);
   }
   
-  // Redirect to a protected route or dashboard
-  return redirect('/dashboard');
+  // --- Role-based redirection logic ---
+  const { data: profile, error: profileError } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', authData.user.id)
+    .single();
+
+  if (profileError || !profile) {
+      // If profile doesn't exist for some reason, sign out and show an error
+      await supabase.auth.signOut();
+      return redirect(`/auth/login?message=Error: No se pudo encontrar el perfil de usuario.`);
+  }
+
+  // Redirect based on the user's role
+  if (profile.role === 'ADVERTISER') {
+    return redirect('/dashboard');
+  } else {
+    return redirect('/');
+  }
 }
 
 // --- Logout Action ---
@@ -79,12 +96,18 @@ export async function register(formData: FormData) {
   });
 
   if (authError) {
+    if (authError.message.includes('User already registered')) {
+        return { error: `El correo electrónico "${email}" ya está en uso.` };
+    }
     return { error: `Error al crear el usuario: ${authError.message}` };
   }
 
   if (authData.user) {
-    const redirectTo = profileData.role === 'ADVERTISER' ? '/dashboard' : '/';
-    redirect(`${redirectTo}?welcome=true`);
+    // This part is for auto-login after registration, which requires a session.
+    // However, Supabase sends a confirmation email by default. 
+    // The redirect will happen after the user clicks the confirmation link.
+    // For now, we redirect to a confirmation pending page or just the login page.
+    redirect('/auth/login?message=¡Registro exitoso! Por favor, revisa tu correo para confirmar tu cuenta.');
   }
 
   // This part is unlikely to be reached but good for safety
