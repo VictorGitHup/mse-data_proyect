@@ -3,7 +3,13 @@
 import { createSupabaseServerActionClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
 
-export async function toggleAdStatus(adId: number, currentStatus: boolean) {
+type AdStatus = 'active' | 'inactive' | 'draft' | 'expired';
+
+export async function toggleAdStatus(adId: number, newStatus: AdStatus) {
+  if (newStatus !== 'active' && newStatus !== 'inactive') {
+    throw new Error('Estado no válido.');
+  }
+
   const supabase = createSupabaseServerActionClient();
 
   const { data: { user } } = await supabase.auth.getUser();
@@ -13,7 +19,7 @@ export async function toggleAdStatus(adId: number, currentStatus: boolean) {
 
   const { error } = await supabase
     .from('ads')
-    .update({ active: !currentStatus })
+    .update({ status: newStatus })
     .eq('id', adId)
     .eq('user_id', user.id); // Ensure user can only update their own ads
 

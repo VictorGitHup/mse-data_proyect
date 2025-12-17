@@ -14,7 +14,7 @@ type Ad = {
   id: number;
   title: string;
   created_at: string;
-  active: boolean;
+  status: 'active' | 'inactive' | 'draft' | 'expired';
 };
 
 interface AdvertiserDashboardProps {
@@ -26,18 +26,19 @@ export default function AdvertiserDashboard({ initialAds }: AdvertiserDashboardP
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
 
-  const handleToggle = (adId: number, currentStatus: boolean) => {
+  const handleToggle = (adId: number, currentStatus: Ad['status']) => {
     startTransition(async () => {
+      const newStatus = currentStatus === 'active' ? 'inactive' : 'active';
       try {
-        await toggleAdStatus(adId, currentStatus);
+        await toggleAdStatus(adId, newStatus);
         setAds(prevAds => 
           prevAds.map(ad => 
-            ad.id === adId ? { ...ad, active: !currentStatus } : ad
+            ad.id === adId ? { ...ad, status: newStatus } : ad
           )
         );
         toast({
           title: 'Estado actualizado',
-          description: `El anuncio ha sido ${!currentStatus ? 'activado' : 'desactivado'}.`,
+          description: `El anuncio ha sido ${newStatus === 'active' ? 'activado' : 'desactivado'}.`,
         });
       } catch (error: any) {
         toast({
@@ -48,6 +49,8 @@ export default function AdvertiserDashboard({ initialAds }: AdvertiserDashboardP
       }
     });
   };
+  
+  const isActive = (status: Ad['status']) => status === 'active';
 
   if (ads.length === 0) {
     return (
@@ -75,13 +78,13 @@ export default function AdvertiserDashboard({ initialAds }: AdvertiserDashboardP
                <div className="flex items-center space-x-2">
                 <Switch
                   id={`status-${ad.id}`}
-                  checked={ad.active}
-                  onCheckedChange={() => handleToggle(ad.id, ad.active)}
-                  disabled={isPending}
+                  checked={isActive(ad.status)}
+                  onCheckedChange={() => handleToggle(ad.id, ad.status)}
+                  disabled={isPending || ad.status === 'draft' || ad.status === 'expired'}
                   aria-label="Estado del anuncio"
                 />
-                <Label htmlFor={`status-${ad.id}`} className={ad.active ? 'text-green-600' : 'text-red-600'}>
-                  {ad.active ? 'Activo' : 'Inactivo'}
+                <Label htmlFor={`status-${ad.id}`} className={isActive(ad.status) ? 'text-green-600' : 'text-red-600'}>
+                  {isActive(ad.status) ? 'Activo' : 'Inactivo'}
                 </Label>
               </div>
               <Button variant="outline" size="sm" asChild>

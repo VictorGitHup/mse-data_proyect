@@ -40,18 +40,25 @@ export async function createAd(formData: FormData) {
   // El slug se podría generar a partir del título para URLs amigables
   const slug = title.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
 
+  const { data: countryData, error: countryError } = await supabase.from('locations').select('id').eq('name', country).eq('type', 'country').single();
+  const { data: regionData, error: regionError } = await supabase.from('locations').select('id').eq('name', region).eq('type', 'region').single();
+  const { data: subregionData, error: subregionError } = subregion ? await supabase.from('locations').select('id').eq('name', subregion).eq('type', 'subregion').single() : { data: null, error: null };
+  
+  if (countryError || regionError || (subregion && subregionError)) {
+      console.error({countryError, regionError, subregionError});
+      return redirect(`/ads/create?error=${encodeURIComponent("Error al encontrar la localización.")}`);
+  }
+
   const { error } = await supabase.from('ads').insert({
     user_id: user.id,
     title,
     description,
     category_id,
-    // La base de datos espera IDs para las ubicaciones, pero estamos guardando nombres.
-    // Esto es una simplificación temporal. En un sistema real, buscaríamos los IDs.
-    country_name: country,
-    region_name: region,
-    subregion_name: subregion,
+    country_id: countryData.id,
+    region_id: regionData.id,
+    subregion_id: subregionData ? subregionData.id : null,
     slug: `${slug}-${Date.now().toString().slice(-6)}`, // Añadir un sufijo para unicidad
-    active: true, // Lo activamos por defecto para simplificar
+    status: 'active', // Lo activamos por defecto para simplificar
   });
 
   if (error) {
@@ -62,3 +69,4 @@ export async function createAd(formData: FormData) {
   revalidatePath('/dashboard');
   redirect('/dashboard');
 }
+
