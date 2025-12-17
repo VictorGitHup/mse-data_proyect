@@ -1,7 +1,8 @@
+
 "use client";
 
-import { useRouter } from 'next/navigation';
-import { useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useState, useEffect, useTransition } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -13,49 +14,44 @@ import { Loader2 } from 'lucide-react';
 export default function Login() {
   const supabase = createSupabaseBrowserClient();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { toast } = useToast();
   
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [view, setView] = useState('sign_in');
   const [role, setRole] = useState<'USER' | 'ADVERTISER'>('USER');
-  const [loading, setLoading] = useState(false);
+  
+  const [isPending, startTransition] = useTransition();
   const [checkingSession, setCheckingSession] = useState(true);
+
+  const nextUrl = searchParams.get('next') || '/';
 
   // Verificar si ya está autenticado
   useEffect(() => {
     const checkSession = async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session) {
-          router.push('/');
-        }
-      } catch (error) {
-        console.error('Error checking session:', error);
-      } finally {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        router.replace(nextUrl);
+      } else {
         setCheckingSession(false);
       }
     };
-    
     checkSession();
-  }, [supabase.auth, router]);
+  }, [supabase, router, nextUrl]);
 
   const handleSignUp = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setLoading(true);
+    startTransition(async () => {
+      if (password.length < 6) {
+        toast({
+          title: "Contraseña muy corta",
+          description: "La contraseña debe tener al menos 6 caracteres.",
+          variant: "destructive",
+        });
+        return;
+      }
 
-    // Validación básica
-    if (!email.includes('@') || password.length < 6) {
-      toast({
-        title: "Datos inválidos",
-        description: "Por favor, ingresa un email válido y una contraseña de al menos 6 caracteres.",
-        variant: "destructive",
-      });
-      setLoading(false);
-      return;
-    }
-
-    try {
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -70,39 +66,35 @@ export default function Login() {
       });
 
       if (error) {
-        toast({
-          title: "Error en el registro",
-          description: error.message,
-          variant: "destructive",
-        });
-      } else if (data.user) {
-        if (data.user.identities && data.user.identities.length === 0) {
-          toast({
-            title: "Este correo ya fue registrado",
-            description: "El correo que ingresaste ya está en uso.",
+        if (error.message.includes("User already registered")) {
+           toast({
+            title: "Correo ya registrado",
+            description: "Este correo ya está en uso. Intenta iniciar sesión o revisa tu bandeja de entrada para el correo de confirmación.",
             variant: "destructive",
           });
         } else {
-          setView('check_email');
+          toast({
+            title: "Error en el registro",
+            description: error.message,
+            variant: "destructive",
+          });
         }
+      } else if (data.user) {
+        // En Supabase v2, `data.user.identities?.length === 0` puede indicar un usuario existente pero no confirmado.
+        // `error` es la forma más fiable de manejar esto ahora.
+        setView('check_email');
+        toast({
+          title: "¡Revisa tu correo!",
+          description: `Hemos enviado un enlace de confirmación a ${email}.`
+        });
       }
-    } catch (error) {
-      toast({
-        title: "Error inesperado",
-        description: "Ocurrió un error inesperado. Intenta nuevamente.",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
+    });
   };
 
   const handleSignIn = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setLoading(true);
-
-    try {
-      const { data, error } = await supabase.auth.signInWithPassword({
+    startTransition(async () => {
+      const { error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
@@ -111,79 +103,32 @@ export default function Login() {
         if (error.message === 'Email not confirmed') {
           toast({
             title: "Email no confirmado",
-            description: "Debes confirmar tu correo electrónico.",
+            description: "Por favor, revisa tu bandeja de entrada y confirma tu cuenta.",
+            variant: "destructive",
+          });
+        } else if (error.message === 'Invalid login credentials') {
+           toast({
+            title: "Credenciales inválidas",
+            description: "El correo electrónico o la contraseña son incorrectos.",
             variant: "destructive",
           });
         } else {
           toast({
             title: "Error al iniciar sesión",
-            description: "Credenciales inválidas.",
+            description: error.message,
             variant: "destructive",
           });
         }
         return;
       }
-
-      // Obtener perfil
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', data.user.id)
-        .single();
-
-      if (profileError) {
-        // Crear perfil si no existe
-        if (profileError.code === 'PGRST116') {
-          const { error: createError } = await supabase
-            .from('profiles')
-            .insert({
-              id: data.user.id,
-              role: 'USER',
-              username: email.split('@')[0],
-              avatar_url: `https://api.dicebear.com/8.x/identicon/svg?seed=${email}`
-            });
-
-          if (createError) {
-            toast({
-              title: "Error al crear perfil",
-              description: "Contacta a soporte.",
-              variant: "destructive",
-            });
-            await supabase.auth.signOut();
-            return;
-          }
-          
-          // Redirigir según el rol seleccionado durante el registro
-          // (esto es complejo, mejor redirigir a home)
-          router.push('/');
-        } else {
-          toast({
-            title: "Error al obtener perfil",
-            description: "Contacta a soporte.",
-            variant: "destructive",
-          });
-          return;
-        }
-      } else {
-        // Redirigir según rol existente
-        if (profile?.role === 'ADVERTISER') {
-          router.push('/dashboard');
-        } else {
-          router.push('/');
-        }
-      }
       
-      router.refresh();
-    } catch (error) {
-      toast({
-        title: "Error inesperado",
-        description: "Ocurrió un error inesperado.",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
+      // La redirección ahora se maneja en el useEffect y el callback
+      router.push(nextUrl);
+      router.refresh(); 
+    });
   };
+  
+  const loading = isPending || checkingSession;
 
   if (checkingSession) {
     return (
@@ -194,7 +139,7 @@ export default function Login() {
   }
 
   return (
-    <div className="flex justify-center items-center h-[calc(100vh-80px)]">
+    <div className="flex justify-center items-center h-[calc(100vh-80px)] p-4">
       <div className="w-full max-w-md p-8 rounded-lg shadow-md bg-card">
         {view === 'check_email' ? (
           <div className="text-center">
@@ -204,7 +149,7 @@ export default function Login() {
             </p>
             <p className="font-bold text-primary mb-4">{email}</p>
             <p className="text-sm text-muted-foreground mb-6">
-              Haz clic en el enlace para confirmar tu cuenta.
+              Haz clic en el enlace para finalizar tu registro.
             </p>
             <Button onClick={() => setView('sign_in')}>
               Volver al inicio de sesión
@@ -262,13 +207,13 @@ export default function Login() {
                 >
                   <div className="flex items-center space-x-2">
                     <RadioGroupItem value="USER" id="role-user" />
-                    <Label htmlFor="role-user" className="font-normal">
+                    <Label htmlFor="role-user" className="font-normal cursor-pointer">
                       Usuario
                     </Label>
                   </div>
                   <div className="flex items-center space-x-2">
                     <RadioGroupItem value="ADVERTISER" id="role-advertiser" />
-                    <Label htmlFor="role-advertiser" className="font-normal">
+                    <Label htmlFor="role-advertiser" className="font-normal cursor-pointer">
                       Anunciante
                     </Label>
                   </div>
@@ -276,7 +221,7 @@ export default function Login() {
               </div>
             )}
 
-            <Button type="submit" disabled={loading} className="mt-4">
+            <Button type="submit" disabled={loading} className="mt-4 w-full">
               {loading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -287,15 +232,13 @@ export default function Login() {
               )}
             </Button>
 
-            <p className="text-sm text-center">
+            <p className="text-sm text-center mt-4">
               {view === 'sign_in' ? '¿No tienes una cuenta?' : '¿Ya tienes una cuenta?'}
               <button
                 type="button"
-                className="ml-1 underline font-semibold"
+                className="ml-1 underline font-semibold text-primary"
                 onClick={() => {
                   setView(view === 'sign_in' ? 'sign_up' : 'sign_in');
-                  setEmail('');
-                  setPassword('');
                 }}
                 disabled={loading}
               >
