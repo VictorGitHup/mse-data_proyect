@@ -4,6 +4,7 @@
 import { createSupabaseServerActionClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { z } from 'zod';
+import { createClient } from '@supabase/supabase-js';
 
 // --- Login Action ---
 export async function login(formData: FormData) {
@@ -18,6 +19,9 @@ export async function login(formData: FormData) {
   });
 
   if (authError || !authData.user) {
+    if (authError?.message.includes("Email not confirmed")) {
+        return redirect(`/auth/login?message=Por favor, confirma tu correo electrónico para iniciar sesión.`);
+    }
     // Note: The "Ã¡" is a character encoding issue for "á".
     return redirect(`/auth/login?message=Error: Las credenciales son inválidas.`);
   }
@@ -86,6 +90,10 @@ export async function register(formData: FormData) {
   const { data: authData, error: authError } = await supabase.auth.signUp({
     email,
     password,
+    options: {
+        // We can pass the profile data here, but it requires a trigger to work.
+        // It's more explicit to insert it manually with a service client.
+    }
   });
 
   if (authError) {
@@ -99,8 +107,21 @@ export async function register(formData: FormData) {
     return { error: "No se pudo crear el usuario, por favor intenta de nuevo." };
   }
 
-  // **FIX**: Manually create the profile in public.profiles table
-  const { error: profileError } = await supabase.from('profiles').insert({
+  // IMPORTANT FIX: Use a service role client to insert the profile.
+  // This bypasses RLS policies, which would block the insertion because
+  // the user running the action doesn't have a session yet.
+  const supabaseAdmin = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false
+      }
+    }
+  );
+
+  const { error: profileError } = await supabaseAdmin.from('profiles').insert({
     id: authData.user.id,
     username,
     full_name,
@@ -111,10 +132,12 @@ export async function register(formData: FormData) {
     // This is a critical error. The user exists in auth but not in profiles.
     // A more robust solution would be to delete the auth user or queue a retry.
     // For now, we'll inform about the failure.
-    console.error("Failed to create profile for new user:", profileError);
-    // Optionally sign out the user if you don't want them in a broken state
-    await supabase.auth.signOut();
-    return { error: `El usuario fue creado, pero falló la creación del perfil. Error: ${profileError.message}` };
+    console.error("Critical Error: Failed to create profile for new user:", profileError);
+    
+    // We should try to delete the user from auth to avoid an orphan user
+    await supabaseAdmin.auth.admin.deleteUser(authData.user.id);
+    
+    return { error: `El usuario no pudo ser creado completamente debido a un error de perfil. Por favor, intente de nuevo. Error: ${profileError.message}` };
   }
 
 
