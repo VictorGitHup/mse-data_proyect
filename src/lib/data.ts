@@ -7,7 +7,17 @@ export const categories = [
   { id: 5, name: 'Eventos' },
 ];
 
-export const countries = [
+export type Region = {
+  name: string;
+  subregions: string[];
+}
+
+export type Country = {
+  name: string;
+  regions: Region[];
+}
+
+export const countries: Country[] = [
   {
     name: 'España',
     regions: [

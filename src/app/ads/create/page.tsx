@@ -9,8 +9,9 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
-export default async function CreateAdPage() {
+export default async function CreateAdPage({ searchParams }: { searchParams: { error?: string }}) {
   const supabase = await createSupabaseServerClient();
 
   const { data: { user } } = await supabase.auth.getUser();
@@ -20,16 +21,7 @@ export default async function CreateAdPage() {
     redirect("/auth/login?next=/ads/create");
   }
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", user.id)
-    .single();
-
-  // This check is still useful as a second layer of security
-  if (profile?.role !== "ADVERTISER") {
-    redirect("/dashboard");
-  }
+  // Role check is now in middleware, so we can assume the user is an advertiser.
   
   return (
     <div className="container mx-auto p-4 md:p-8 flex justify-center">
@@ -41,6 +33,11 @@ export default async function CreateAdPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
+            {searchParams.error && (
+              <Alert variant="destructive" className="mb-4">
+                <AlertDescription>{searchParams.error}</AlertDescription>
+              </Alert>
+            )}
             <CreateAdForm />
         </CardContent>
       </Card>
