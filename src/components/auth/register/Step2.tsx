@@ -1,7 +1,8 @@
 
 'use client';
 
-import { useFormContext, useFormStatus } from 'react-hook-form';
+import { useFormContext } from 'react-hook-form';
+import { useFormStatus } from 'react-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
