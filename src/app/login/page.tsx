@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label'
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import type { AuthError } from '@supabase/supabase-js';
 
 export default function Login() {
   const supabase = createSupabaseBrowserClient();
@@ -35,13 +36,31 @@ export default function Login() {
     });
 
     if (error) {
-        toast({
-            title: "Error en el registro",
-            description: "Este correo electrónico ya está registrado. Por favor, inicia sesión.",
-            variant: "destructive",
-        });
+        // Check if the error is because the user already exists
+        if (error.message.includes("User already registered")) {
+             toast({
+                title: "Error en el registro",
+                description: "Este correo electrónico ya está en uso. Por favor, inicia sesión.",
+                variant: "destructive",
+            });
+        } else {
+            toast({
+                title: "Error en el registro",
+                description: error.message,
+                variant: "destructive",
+            });
+        }
     } else if (data.user) {
-        setView('check_email');
+        // If signUp is successful but the user needs to confirm their email
+        if (data.user.identities && data.user.identities.length === 0) {
+             toast({
+                title: "Error en el registro",
+                description: "Este correo electrónico ya está en uso. Por favor, inicia sesión.",
+                variant: "destructive",
+            });
+        } else {
+            setView('check_email');
+        }
     }
   }
 
@@ -65,7 +84,7 @@ export default function Login() {
             .eq('id', data.user.id)
             .single();
 
-        if (profileError) {
+        if (profileError && profileError.code !== 'PGRST116') { //PGRST116 means no rows found
              toast({
                 title: "Error al obtener el perfil",
                 description: "No se pudo encontrar tu perfil. Por favor, contacta a soporte.",
