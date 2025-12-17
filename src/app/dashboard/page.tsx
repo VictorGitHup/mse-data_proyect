@@ -28,7 +28,7 @@ function DashboardSkeleton() {
 }
 
 async function DashboardData() {
-  const supabase = await createSupabaseServerClient();
+  const supabase = createSupabaseServerClient();
   const { data: { user } } = await supabase.auth.getUser();
 
   if (!user) {
