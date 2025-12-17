@@ -4,22 +4,17 @@
 import Link from "next/link";
 import { Button } from "./ui/button";
 import { User as UserIcon } from 'lucide-react';
-import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import type { User } from "@supabase/supabase-js";
-import { useRouter } from "next/navigation";
+import { logout } from "@/lib/actions/auth.actions";
 
 interface HeaderProps {
   user: User | null;
 }
 
 export default function Header({ user }: HeaderProps) {
-  const router = useRouter();
   
   const handleLogout = async () => {
-    const supabase = createSupabaseBrowserClient();
-    await supabase.auth.signOut();
-    router.push('/');
-    router.refresh();
+    await logout();
   };
 
   return (
@@ -37,16 +32,18 @@ export default function Header({ user }: HeaderProps) {
                   {user.email}
                 </Button>
               </Link>
-              <Button onClick={handleLogout} variant="destructive">
-                Logout
-              </Button>
+              <form action={handleLogout}>
+                <Button type="submit" variant="destructive">
+                  Logout
+                </Button>
+              </form>
             </>
           ) : (
             <>
               <Link href="/auth/login">
                 <Button variant="ghost">Login</Button>
               </Link>
-              <Link href="/auth/login?view=sign_up">
+              <Link href="/auth/register">
                 <Button>Sign Up</Button>
               </Link>
             </>
