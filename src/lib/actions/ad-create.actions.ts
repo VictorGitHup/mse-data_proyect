@@ -12,7 +12,7 @@ const adSchema = z.object({
   category_id: z.coerce.number().int().positive('Debes seleccionar una categoría.'),
   country: z.string().min(1, 'Debes seleccionar un país.'),
   region: z.string().min(1, 'Debes seleccionar una región.'),
-  subregion: z.string().optional(), // Es opcional ya que no todas las regiones tienen subregiones
+  subregion: z.string().optional(),
 });
 
 export async function createAd(formData: FormData) {
@@ -21,18 +21,18 @@ export async function createAd(formData: FormData) {
   const { data: { user } } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect('/auth/login?next=/ads/create');
+    return redirect('/auth/login?next=/ads/create');
   }
   
   const rawFormData = Object.fromEntries(formData.entries());
+  console.log('Raw form data:', rawFormData);
+
   const validatedFields = adSchema.safeParse(rawFormData);
 
   if (!validatedFields.success) {
-    // En una implementación real, deberíamos devolver estos errores al cliente.
-    // Por ahora, lo mostraremos en la consola del servidor.
     console.error('Validation errors:', validatedFields.error.flatten().fieldErrors);
-    // Podríamos redirigir con un mensaje de error genérico
-    return redirect('/ads/create?error=ValidationFailed');
+    const firstError = Object.values(validatedFields.error.flatten().fieldErrors)[0]?.[0];
+    return redirect(`/ads/create?error=${encodeURIComponent(firstError || 'Datos de formulario inválidos.')}`);
   }
 
   const { title, description, category_id, country, region, subregion } = validatedFields.data;
@@ -40,33 +40,41 @@ export async function createAd(formData: FormData) {
   // El slug se podría generar a partir del título para URLs amigables
   const slug = title.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
 
-  const { data: countryData, error: countryError } = await supabase.from('locations').select('id').eq('name', country).eq('type', 'country').single();
-  const { data: regionData, error: regionError } = await supabase.from('locations').select('id').eq('name', region).eq('type', 'region').single();
-  const { data: subregionData, error: subregionError } = subregion ? await supabase.from('locations').select('id').eq('name', subregion).eq('type', 'subregion').single() : { data: null, error: null };
-  
-  if (countryError || regionError || (subregion && subregionError)) {
-      console.error({countryError, regionError, subregionError});
-      return redirect(`/ads/create?error=${encodeURIComponent("Error al encontrar la localización.")}`);
-  }
+  try {
+    const { data: countryData, error: countryError } = await supabase.from('locations').select('id').eq('name', country).eq('type', 'country').single();
+    if (countryError || !countryData) throw new Error(`País no encontrado: ${country}`);
 
-  const { error } = await supabase.from('ads').insert({
-    user_id: user.id,
-    title,
-    description,
-    category_id,
-    country_id: countryData.id,
-    region_id: regionData.id,
-    subregion_id: subregionData ? subregionData.id : null,
-    slug: `${slug}-${Date.now().toString().slice(-6)}`, // Añadir un sufijo para unicidad
-    status: 'active', // Lo activamos por defecto para simplificar
-  });
+    const { data: regionData, error: regionError } = await supabase.from('locations').select('id').eq('name', region).eq('type', 'region').eq('parent_id', countryData.id).single();
+    if (regionError || !regionData) throw new Error(`Región no encontrada: ${region}`);
+    
+    let subregionId = null;
+    if (subregion) {
+      const { data: subregionData, error: subregionError } = await supabase.from('locations').select('id').eq('name', subregion).eq('type', 'subregion').eq('parent_id', regionData.id).single();
+      if (subregionError || !subregionData) throw new Error(`Subregión no encontrada: ${subregion}`);
+      subregionId = subregionData.id;
+    }
 
-  if (error) {
-    console.error('Supabase error:', error);
+    const { error: insertError } = await supabase.from('ads').insert({
+      user_id: user.id,
+      title,
+      description,
+      category_id,
+      country_id: countryData.id,
+      region_id: regionData.id,
+      subregion_id: subregionId,
+      slug: `${slug}-${Date.now().toString().slice(-6)}`,
+      status: 'active',
+    });
+
+    if (insertError) {
+      throw insertError;
+    }
+
+  } catch (error: any) {
+    console.error('Error creating ad:', error);
     return redirect(`/ads/create?error=${encodeURIComponent(error.message)}`);
   }
 
   revalidatePath('/dashboard');
   redirect('/dashboard');
 }
-

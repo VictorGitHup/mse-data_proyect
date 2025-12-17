@@ -10,6 +10,7 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Terminal } from "lucide-react";
 
 export default async function CreateAdPage({ searchParams }: { searchParams: { error?: string }}) {
   const supabase = await createSupabaseServerClient();
@@ -35,6 +36,7 @@ export default async function CreateAdPage({ searchParams }: { searchParams: { e
         <CardContent>
             {searchParams.error && (
               <Alert variant="destructive" className="mb-4">
+                <Terminal className="h-4 w-4" />
                 <AlertDescription>{searchParams.error}</AlertDescription>
               </Alert>
             )}
