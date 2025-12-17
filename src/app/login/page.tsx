@@ -89,7 +89,6 @@ export default function Login() {
       // Step 2: Insert into profiles table
       const { error: profileError } = await supabase.from('profiles').insert({
         id: signUpData.user.id,
-        email: signUpData.user.email,
         role: role,
         username: email.split('@')[0],
         avatar_url: `https://api.dicebear.com/8.x/identicon/svg?seed=${email}`
@@ -97,7 +96,8 @@ export default function Login() {
 
       if (profileError) {
         // Attempt to clean up the user if profile insert fails
-        await supabase.auth.admin.deleteUser(signUpData.user.id);
+        // This requires admin privileges and will fail on the client-side, but it's good practice to log this
+        console.error("Profile insert failed, user cleanup might be needed:", profileError);
         toast({
             title: "Error guardando el perfil",
             description: "No se pudo guardar la información de tu perfil. " + profileError.message,
