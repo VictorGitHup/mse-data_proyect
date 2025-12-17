@@ -21,6 +21,16 @@ export default async function RootLayout({
     data: { user },
   } = await supabase.auth.getUser();
 
+  let profile = null;
+  if (user) {
+    const { data } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .single();
+    profile = data;
+  }
+
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
@@ -36,7 +46,7 @@ export default async function RootLayout({
         />
       </head>
       <body className="font-body antialiased">
-        <Header user={user} />
+        <Header user={user} profile={profile} />
         <main>{children}</main>
         <Toaster />
       </body>
