@@ -2,9 +2,13 @@
 
 import { useSupabase } from '@/components/providers/supabase-provider';
 import { Auth } from '@supabase/auth-ui-react';
-import { ThemeSupa } from '@supabase/auth-ui-shared';
+import { ThemeSupa, type ViewType } from '@supabase/auth-ui-shared';
 
-export default function LoginForm() {
+interface LoginFormProps {
+    view: ViewType;
+}
+
+export default function LoginForm({ view }: LoginFormProps) {
     const { supabase } = useSupabase();
 
     return (
@@ -14,9 +18,10 @@ export default function LoginForm() {
                     supabaseClient={supabase}
                     appearance={{ theme: ThemeSupa }}
                     theme="dark"
-                    showLinks={false}
+                    showLinks={true}
                     providers={[]}
                     redirectTo={`${process.env.NEXT_PUBLIC_APP_URL}/auth/callback`}
+                    view={view}
                 />
             </div>
         </div>
