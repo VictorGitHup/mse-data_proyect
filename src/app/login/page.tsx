@@ -36,26 +36,18 @@ export default function Login() {
     });
 
     if (error) {
-        // Check if the error is because the user already exists
-        if (error.message.includes("User already registered")) {
-             toast({
-                title: "Error en el registro",
-                description: "Este correo electrónico ya está en uso. Por favor, inicia sesión.",
-                variant: "destructive",
-            });
-        } else {
-            toast({
-                title: "Error en el registro",
-                description: error.message,
-                variant: "destructive",
-            });
-        }
+        toast({
+            title: "Error en el registro",
+            description: error.message,
+            variant: "destructive",
+        });
     } else if (data.user) {
-        // If signUp is successful but the user needs to confirm their email
+        // Supabase sends a confirmation email, but might return a user object
+        // if the user is already registered but unconfirmed.
         if (data.user.identities && data.user.identities.length === 0) {
              toast({
-                title: "Error en el registro",
-                description: "Este correo electrónico ya está en uso. Por favor, inicia sesión.",
+                title: "Este correo ya fue registrado",
+                description: "El correo que ingresaste ya está en uso. Por favor, inicia sesión o revisa tu bandeja de entrada para el email de confirmación.",
                 variant: "destructive",
             });
         } else {
@@ -72,11 +64,19 @@ export default function Login() {
     });
     
     if (error) {
-        toast({
-            title: "Error al iniciar sesión",
-            description: "Credenciales inválidas. Por favor, inténtalo de nuevo.",
-            variant: "destructive",
-        });
+        if (error.message === 'Email not confirmed') {
+            toast({
+                title: "Email no confirmado",
+                description: "Debes confirmar tu correo electrónico antes de iniciar sesión. Revisa tu bandeja de entrada.",
+                variant: "destructive",
+            });
+        } else {
+            toast({
+                title: "Error al iniciar sesión",
+                description: "Credenciales inválidas. Por favor, inténtalo de nuevo.",
+                variant: "destructive",
+            });
+        }
     } else if (data.user) {
         const { data: profile, error: profileError } = await supabase
             .from('profiles')
@@ -108,7 +108,7 @@ export default function Login() {
       <div className="w-full max-w-md p-8 rounded-lg shadow-md bg-card">
         {view === 'check_email' ? (
           <p className="text-center text-foreground">
-            Revisa tu correo <span className="font-bold">{email}</span> para continuar con el registro.
+            Revisa tu correo <span className="font-bold">{email}</span> para completar tu registro.
           </p>
         ) : (
           <form
