@@ -80,8 +80,6 @@ export default function Login() {
           });
         }
       } else if (data.user) {
-        // En Supabase v2, `data.user.identities?.length === 0` puede indicar un usuario existente pero no confirmado.
-        // `error` es la forma más fiable de manejar esto ahora.
         setView('check_email');
         toast({
           title: "¡Revisa tu correo!",
@@ -122,7 +120,6 @@ export default function Login() {
         return;
       }
       
-      // La redirección ahora se maneja en el useEffect y el callback
       router.push(nextUrl);
       router.refresh(); 
     });
