@@ -4,7 +4,6 @@
 import { createSupabaseServerActionClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { z } from 'zod';
-import { createClient } from '@supabase/supabase-js';
 
 // --- Login Action ---
 export async function login(formData: FormData) {
@@ -86,37 +85,29 @@ export async function register(formData: FormData) {
     return { error: `El nombre de usuario "${username}" ya está en uso.` };
   }
   
-  const supabaseAdmin = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false
-      }
-    }
-  );
-
-  // Create user in auth.users
   const { data: authData, error: authError } = await supabase.auth.signUp({
     email,
     password,
+    options: {
+      data: {
+        username,
+        full_name,
+        role,
+      }
+    }
   });
 
   if (authError) {
     if (authError.message.includes('User already registered')) {
-        // User exists, but may not be confirmed. Let's try to resend the confirmation email.
         const { error: resendError } = await supabase.auth.resend({
             type: 'signup',
             email: email,
         });
 
         if (resendError) {
-            // This can happen if the user is already confirmed.
             return { error: `El correo electrónico "${email}" ya está registrado.` };
         }
 
-        // Redirect with a message to check email
         return redirect('/auth/login?message=Ya existe una cuenta con este correo. Hemos reenviado el email de confirmación.');
     }
     return { error: `Error al crear el usuario: ${authError.message}` };
@@ -125,20 +116,6 @@ export async function register(formData: FormData) {
   if (!authData.user) {
     return { error: "No se pudo crear el usuario, por favor intenta de nuevo." };
   }
-
-  const { error: profileError } = await supabaseAdmin.from('profiles').insert({
-    id: authData.user.id,
-    username,
-    full_name,
-    role,
-  });
-
-  if (profileError) {
-    await supabaseAdmin.auth.admin.deleteUser(authData.user.id);
-    console.error("Critical Error: Failed to create profile for new user:", profileError);
-    return { error: `El usuario no pudo ser creado completamente debido a un error de perfil. Por favor, intente de nuevo. Error: ${profileError.message}` };
-  }
-
 
   // Redirect to a page that tells the user to check their email.
   redirect('/auth/login?message=¡Registro exitoso! Por favor, revisa tu correo para confirmar tu cuenta.');
