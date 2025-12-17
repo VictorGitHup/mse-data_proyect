@@ -1,9 +1,9 @@
-import { createSupabaseServerComponentClient } from "@/lib/supabase/server";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import AccountForm from "./AccountForm";
 
 export default async function AccountPage() {
-  const supabase = await createSupabaseServerComponentClient();
+  const supabase = createSupabaseServerClient();
 
   const { data: { user } } = await supabase.auth.getUser();
 

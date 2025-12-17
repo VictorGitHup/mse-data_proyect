@@ -3,7 +3,7 @@ import { Suspense } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { createSupabaseServerComponentClient } from '@/lib/supabase/server';
+import { createSupabaseServerClient } from '@/lib/supabase/server';
 
 type Profile = {
   username: string;
@@ -20,7 +20,7 @@ type Ad = {
 };
 
 async function AdGrid() {
-  const supabase = await createSupabaseServerComponentClient();
+  const supabase = createSupabaseServerClient();
   const { data: ads, error } = await supabase
     .from('ads')
     .select('*, profiles ( username )')
