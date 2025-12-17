@@ -46,7 +46,7 @@ export default function Header({ user }: HeaderProps) {
               <Link href="/auth/login">
                 <Button variant="ghost">Login</Button>
               </Link>
-              <Link href="/auth/login">
+              <Link href="/auth/login?view=sign_up">
                 <Button>Sign Up</Button>
               </Link>
             </>
