@@ -61,14 +61,31 @@ export async function middleware(request: NextRequest) {
 
   const { pathname } = request.nextUrl
 
-  // Define protected routes
-  const protectedRoutes = ['/dashboard']
+  // Define advertiser-only routes
+  const advertiserRoutes = ['/dashboard', '/ads/create']
 
-  if (!user && protectedRoutes.some(route => pathname.startsWith(route))) {
+  // If user is not logged in, redirect to login page for protected routes
+  if (!user && advertiserRoutes.some(route => pathname.startsWith(route))) {
     const url = request.nextUrl.clone()
     url.pathname = '/auth/login'
     url.searchParams.set('next', pathname)
     return NextResponse.redirect(url)
+  }
+
+  // If user is logged in, check their role for advertiser routes
+  if (user && advertiserRoutes.some(route => pathname.startsWith(route))) {
+    const { data: profile, error } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .single()
+
+    // If there's an error fetching the profile or the user is not an advertiser, redirect them.
+    if (error || !profile || profile.role !== 'ADVERTISER') {
+      const url = request.nextUrl.clone()
+      url.pathname = '/' // Redirect to home page
+      return NextResponse.redirect(url)
+    }
   }
 
   return response

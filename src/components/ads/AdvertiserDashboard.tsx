@@ -85,7 +85,7 @@ export default function AdvertiserDashboard({ initialAds }: AdvertiserDashboardP
                 </Label>
               </div>
               <Button variant="outline" size="sm" asChild>
-                <Link href={`/ads/${ad.id}/manage`}>Gestionar</Link>
+                <Link href={`/dashboard/ads/${ad.id}/manage`}>Gestionar</Link>
               </Button>
             </div>
           </CardContent>
