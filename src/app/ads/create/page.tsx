@@ -1,4 +1,4 @@
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createSupabaseServerComponentClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import CreateAdForm from "./CreateAdForm";
 import {
@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/card"
 
 export default async function CreateAdPage() {
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerComponentClient();
 
   const { data: { user } } = await supabase.auth.getUser();
 

@@ -1,4 +1,4 @@
-import { createSupabaseServerClient } from '@/lib/supabase/server';
+import { createSupabaseServerComponentClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
@@ -27,7 +27,7 @@ function DashboardSkeleton() {
 }
 
 async function DashboardData() {
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerComponentClient();
   const { data: { user } } = await supabase.auth.getUser();
 
   if (!user) {
