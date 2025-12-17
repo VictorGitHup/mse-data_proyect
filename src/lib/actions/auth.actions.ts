@@ -18,6 +18,7 @@ export async function login(formData: FormData) {
   });
 
   if (authError || !authData.user) {
+    // Note: The "Ã¡" is a character encoding issue for "á".
     return redirect(`/auth/login?message=Error: Las credenciales son inválidas.`);
   }
   
@@ -68,31 +69,23 @@ export async function register(formData: FormData) {
     return { error: "Los datos proporcionados son inválidos. Por favor, revisa el formulario." };
   }
 
-  const { email, password, ...profileData } = validation.data;
+  const { email, password, username, full_name, role } = validation.data;
 
   // Check if username is already taken (server-side)
   const { data: existingProfile } = await supabase
     .from('profiles')
     .select('username')
-    .eq('username', profileData.username)
+    .eq('username', username)
     .maybeSingle();
 
   if (existingProfile) {
-    return { error: `El nombre de usuario "${profileData.username}" ya está en uso.` };
+    return { error: `El nombre de usuario "${username}" ya está en uso.` };
   }
 
   // Create user in auth.users
   const { data: authData, error: authError } = await supabase.auth.signUp({
     email,
     password,
-    options: {
-      data: {
-        // These fields will be passed to the trigger that creates the profile
-        full_name: profileData.full_name,
-        username: profileData.username,
-        role: profileData.role,
-      }
-    }
   });
 
   if (authError) {
@@ -101,17 +94,32 @@ export async function register(formData: FormData) {
     }
     return { error: `Error al crear el usuario: ${authError.message}` };
   }
-
-  if (authData.user) {
-    // This part is for auto-login after registration, which requires a session.
-    // However, Supabase sends a confirmation email by default. 
-    // The redirect will happen after the user clicks the confirmation link.
-    // For now, we redirect to a confirmation pending page or just the login page.
-    redirect('/auth/login?message=¡Registro exitoso! Por favor, revisa tu correo para confirmar tu cuenta.');
+  
+  if (!authData.user) {
+    return { error: "No se pudo crear el usuario, por favor intenta de nuevo." };
   }
 
-  // This part is unlikely to be reached but good for safety
-  return { error: "Ocurrió un error inesperado durante el registro." };
+  // **FIX**: Manually create the profile in public.profiles table
+  const { error: profileError } = await supabase.from('profiles').insert({
+    id: authData.user.id,
+    username,
+    full_name,
+    role,
+  });
+
+  if (profileError) {
+    // This is a critical error. The user exists in auth but not in profiles.
+    // A more robust solution would be to delete the auth user or queue a retry.
+    // For now, we'll inform about the failure.
+    console.error("Failed to create profile for new user:", profileError);
+    // Optionally sign out the user if you don't want them in a broken state
+    await supabase.auth.signOut();
+    return { error: `El usuario fue creado, pero falló la creación del perfil. Error: ${profileError.message}` };
+  }
+
+
+  // Redirect to a page that tells the user to check their email.
+  redirect('/auth/login?message=¡Registro exitoso! Por favor, revisa tu correo para confirmar tu cuenta.');
 }
 
 // --- Username Check Action ---
