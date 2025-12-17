@@ -37,7 +37,7 @@ export default async function RootLayout({
       </head>
       <body className="font-body antialiased">
         <Header user={user} />
-        {children}
+        <main>{children}</main>
         <Toaster />
       </body>
     </html>

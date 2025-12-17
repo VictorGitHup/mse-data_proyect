@@ -16,20 +16,10 @@ export default async function CreateAdPage() {
   const { data: { user } } = await supabase.auth.getUser();
 
   if (!user) {
-    // Should be handled by middleware
-    redirect("/auth/login?next=/ads/create");
+    redirect("/auth/login?next=/dashboard/ads/create");
   }
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", user.id)
-    .single();
-
-  // This check is still useful as a second layer of security
-  if (profile?.role !== "ADVERTISER") {
-    redirect("/dashboard");
-  }
+  // We will add role-based access control later
   
   return (
     <div className="container mx-auto p-4 md:p-8 flex justify-center">

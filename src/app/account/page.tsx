@@ -1,7 +1,7 @@
 
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
-import AccountForm from "./AccountForm";
+import AccountForm from "@/components/auth/AccountForm";
 
 export default async function AccountPage() {
   const supabase = await createSupabaseServerClient();
@@ -9,7 +9,8 @@ export default async function AccountPage() {
   const { data: { user } } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect("/login");
+    // This should be handled by middleware, but as a fallback
+    redirect("/auth/login");
   }
 
   const { data: profile, error } = await supabase

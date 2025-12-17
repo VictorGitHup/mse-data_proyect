@@ -1,12 +1,11 @@
 
-// src/lib/supabase/server.ts - VERSIÓN CORREGIDA
 import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import type { ReadonlyRequestCookies } from 'next/dist/server/web/spec-extension/adapters/request-cookies';
 
-// Para Server Components (con await)
+// For Server Components (with await)
 export async function createSupabaseServerClient() {
-  const cookieStore = await cookies();
+  const cookieStore = cookies();
   
   return createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -27,10 +26,8 @@ export async function createSupabaseServerClient() {
   );
 }
 
-// Para Server Actions y Route Handlers (sin await)
+// For Server Actions and Route Handlers (without await)
 export function createSupabaseServerActionClient() {
-  // En Server Actions, cookies() es síncrono pero TypeScript no lo sabe
-  // Necesitamos un tipo explícito
   const cookieStore = cookies() as unknown as ReadonlyRequestCookies;
   
   return createServerClient(
@@ -45,14 +42,14 @@ export function createSupabaseServerActionClient() {
           try {
             cookieStore.set({ name, value, ...options });
           } catch (error) {
-            // En Server Actions, set puede fallar silenciosamente
+            // In Server Actions, set may fail silently
           }
         },
         remove(name: string, options: CookieOptions) {
           try {
             cookieStore.set({ name, value: '', ...options });
           } catch (error) {
-            // En Server Actions, remove puede fallar silenciosamente
+            // In Server Actions, remove may fail silently
           }
         },
       },

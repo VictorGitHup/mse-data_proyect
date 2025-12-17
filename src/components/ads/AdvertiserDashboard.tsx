@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
-import { toggleAdStatus } from '@/app/ads/actions';
+import { toggleAdStatus } from '@/lib/actions/ads.actions';
 
 type Ad = {
   id: number;

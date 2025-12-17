@@ -12,7 +12,6 @@ import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import type { User } from "@supabase/supabase-js";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { User as UserIcon } from "lucide-react";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 type Profile = {
   id: string;
@@ -42,10 +41,6 @@ export default function AccountForm({ user, profile }: AccountFormProps) {
       setUsername(profile.username || "");
       setAvatarUrl(profile.avatar_url || "");
       setRole(profile.role || "USER");
-    } else {
-      setUsername("");
-      setAvatarUrl("");
-      setRole("USER");
     }
   }, [profile]);
 
@@ -105,7 +100,6 @@ export default function AccountForm({ user, profile }: AccountFormProps) {
         .getPublicUrl(filePath);
         
       setAvatarUrl(publicUrl);
-      // Now update the profile with the new public URL
       await updateProfile({ avatar_url: publicUrl });
 
     } catch (error: any) {
