@@ -19,6 +19,35 @@ export type Country = {
 
 export const countries: Country[] = [
   {
+    name: 'México',
+    regions: [
+      {
+        name: 'Ciudad de México',
+        subregions: ['Cuauhtémoc', 'Miguel Hidalgo', 'Benito Juárez'],
+      },
+      {
+        name: 'Jalisco',
+        subregions: [],
+      },
+      {
+        name: 'Nuevo León',
+        subregions: [],
+      },
+      {
+        name: 'Quintana Roo',
+        subregions: [],
+      },
+      {
+        name: 'Baja California',
+        subregions: [],
+      },
+      {
+        name: 'Yucatán',
+        subregions: [],
+      },
+    ],
+  },
+  {
     name: 'España',
     regions: [
       {
@@ -32,23 +61,6 @@ export const countries: Country[] = [
       {
         name: 'Comunidad de Madrid',
         subregions: ['Madrid', 'Alcalá de Henares', 'Getafe'],
-      },
-    ],
-  },
-  {
-    name: 'México',
-    regions: [
-      {
-        name: 'Jalisco',
-        subregions: ['Guadalajara', 'Puerto Vallarta', 'Tlaquepaque'],
-      },
-      {
-        name: 'Quintana Roo',
-        subregions: ['Cancún', 'Playa del Carmen', 'Tulum'],
-      },
-      {
-        name: 'Ciudad de México',
-        subregions: ['Coyoacán', 'Polanco', 'Roma Norte'],
       },
     ],
   },
@@ -66,6 +78,23 @@ export const countries: Country[] = [
       {
         name: 'Córdoba',
         subregions: ['Córdoba Capital', 'Villa Carlos Paz', 'Río Cuarto'],
+      },
+    ],
+  },
+   {
+    name: 'Colombia',
+    regions: [
+      {
+        name: 'Antioquia',
+        subregions: ['Medellín', 'Envigado', 'Sabaneta'],
+      },
+      {
+        name: 'Cundinamarca',
+        subregions: ['Bogotá', 'Soacha', 'Chía'],
+      },
+      {
+        name: 'Valle del Cauca',
+        subregions: ['Cali', 'Palmira', 'Buenaventura'],
       },
     ],
   },
