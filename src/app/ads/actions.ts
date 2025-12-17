@@ -2,7 +2,7 @@
 'use server';
 
 import { z } from 'zod';
-import { createSupabaseServerClient } from '@/lib/supabase/server';
+import { createSupabaseServerActionClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 
@@ -22,7 +22,7 @@ export async function createAd(
   prevState: FormState,
   formData: FormData
 ): Promise<FormState> {
-  const supabase = createSupabaseServerClient();
+  const supabase = createSupabaseServerActionClient();
   
   const { data: { user } } = await supabase.auth.getUser();
 
@@ -63,8 +63,7 @@ export async function createAd(
     description,
     location_city,
     location_country,
-    // category_id y otros campos requeridos si los hay
-    category_id: 1, // Usando un valor por defecto temporalmente, esto deberia ser un selector
+    category_id: 1,
   });
 
   if (error) {
@@ -80,7 +79,7 @@ export async function createAd(
 }
 
 export async function toggleAdStatus(adId: number, currentState: boolean) {
-  const supabase = createSupabaseServerClient();
+  const supabase = createSupabaseServerActionClient();
 
   const { data: { user } } = await supabase.auth.getUser();
 
@@ -113,5 +112,5 @@ export async function toggleAdStatus(adId: number, currentState: boolean) {
   }
 
   revalidatePath('/dashboard');
-  revalidatePath('/'); // Also revalidate home page in case the ad was visible there
+  revalidatePath('/');
 }
