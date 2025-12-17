@@ -85,31 +85,7 @@ export async function register(formData: FormData) {
   if (existingProfile) {
     return { error: `El nombre de usuario "${username}" ya está en uso.` };
   }
-
-  // Create user in auth.users
-  const { data: authData, error: authError } = await supabase.auth.signUp({
-    email,
-    password,
-    options: {
-        // We can pass the profile data here, but it requires a trigger to work.
-        // It's more explicit to insert it manually with a service client.
-    }
-  });
-
-  if (authError) {
-    if (authError.message.includes('User already registered')) {
-        return { error: `El correo electrónico "${email}" ya está en uso.` };
-    }
-    return { error: `Error al crear el usuario: ${authError.message}` };
-  }
   
-  if (!authData.user) {
-    return { error: "No se pudo crear el usuario, por favor intenta de nuevo." };
-  }
-
-  // IMPORTANT FIX: Use a service role client to insert the profile.
-  // This bypasses RLS policies, which would block the insertion because
-  // the user running the action doesn't have a session yet.
   const supabaseAdmin = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!,
@@ -121,6 +97,35 @@ export async function register(formData: FormData) {
     }
   );
 
+  // Create user in auth.users
+  const { data: authData, error: authError } = await supabase.auth.signUp({
+    email,
+    password,
+  });
+
+  if (authError) {
+    if (authError.message.includes('User already registered')) {
+        // User exists, but may not be confirmed. Let's try to resend the confirmation email.
+        const { error: resendError } = await supabase.auth.resend({
+            type: 'signup',
+            email: email,
+        });
+
+        if (resendError) {
+            // This can happen if the user is already confirmed.
+            return { error: `El correo electrónico "${email}" ya está registrado.` };
+        }
+
+        // Redirect with a message to check email
+        return redirect('/auth/login?message=Ya existe una cuenta con este correo. Hemos reenviado el email de confirmación.');
+    }
+    return { error: `Error al crear el usuario: ${authError.message}` };
+  }
+  
+  if (!authData.user) {
+    return { error: "No se pudo crear el usuario, por favor intenta de nuevo." };
+  }
+
   const { error: profileError } = await supabaseAdmin.from('profiles').insert({
     id: authData.user.id,
     username,
@@ -129,14 +134,8 @@ export async function register(formData: FormData) {
   });
 
   if (profileError) {
-    // This is a critical error. The user exists in auth but not in profiles.
-    // A more robust solution would be to delete the auth user or queue a retry.
-    // For now, we'll inform about the failure.
-    console.error("Critical Error: Failed to create profile for new user:", profileError);
-    
-    // We should try to delete the user from auth to avoid an orphan user
     await supabaseAdmin.auth.admin.deleteUser(authData.user.id);
-    
+    console.error("Critical Error: Failed to create profile for new user:", profileError);
     return { error: `El usuario no pudo ser creado completamente debido a un error de perfil. Por favor, intente de nuevo. Error: ${profileError.message}` };
   }
 
