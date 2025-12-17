@@ -43,10 +43,10 @@ export default function Header({ user }: HeaderProps) {
             </>
           ) : (
             <>
-              <Link href="/login">
+              <Link href="/auth/login">
                 <Button variant="ghost">Login</Button>
               </Link>
-              <Link href="/login">
+              <Link href="/auth/login">
                 <Button>Sign Up</Button>
               </Link>
             </>
