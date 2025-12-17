@@ -27,7 +27,6 @@ export default function Login() {
 
   const nextUrl = searchParams.get('next') || '/';
 
-  // Verificar si ya está autenticado
   useEffect(() => {
     const checkSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
@@ -52,21 +51,17 @@ export default function Login() {
         return;
       }
 
-      const { data, error } = await supabase.auth.signUp({
+      // Step 1: Sign up the user
+      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
         email,
         password,
         options: {
           emailRedirectTo: `${window.location.origin}/auth/callback`,
-          data: {
-            role: role,
-            username: email.split('@')[0],
-            avatar_url: `https://api.dicebear.com/8.x/identicon/svg?seed=${email}`
-          }
         },
       });
 
-      if (error) {
-        if (error.message.includes("User already registered")) {
+      if (signUpError) {
+        if (signUpError.message.includes("User already registered")) {
            toast({
             title: "Correo ya registrado",
             description: "Este correo ya está en uso. Intenta iniciar sesión o revisa tu bandeja de entrada para el correo de confirmación.",
@@ -75,17 +70,47 @@ export default function Login() {
         } else {
           toast({
             title: "Error en el registro",
-            description: error.message,
+            description: signUpError.message,
             variant: "destructive",
           });
         }
-      } else if (data.user) {
-        setView('check_email');
-        toast({
-          title: "¡Revisa tu correo!",
-          description: `Hemos enviado un enlace de confirmación a ${email}.`
-        });
+        return;
       }
+
+      if (!signUpData.user) {
+        toast({
+            title: "Error en el registro",
+            description: "No se pudo crear el usuario. Por favor, inténtalo de nuevo.",
+            variant: "destructive",
+        });
+        return;
+      }
+
+      // Step 2: Insert into profiles table
+      const { error: profileError } = await supabase.from('profiles').insert({
+        id: signUpData.user.id,
+        email: signUpData.user.email,
+        role: role,
+        username: email.split('@')[0],
+        avatar_url: `https://api.dicebear.com/8.x/identicon/svg?seed=${email}`
+      });
+
+      if (profileError) {
+        // Attempt to clean up the user if profile insert fails
+        await supabase.auth.admin.deleteUser(signUpData.user.id);
+        toast({
+            title: "Error guardando el perfil",
+            description: "No se pudo guardar la información de tu perfil. " + profileError.message,
+            variant: "destructive",
+        });
+        return;
+      }
+      
+      setView('check_email');
+      toast({
+        title: "¡Revisa tu correo!",
+        description: `Hemos enviado un enlace de confirmación a ${email}.`
+      });
     });
   };
 
