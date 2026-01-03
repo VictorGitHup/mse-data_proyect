@@ -21,7 +21,12 @@ export default async function AdPage({ params }: { params: { slug: string } }) {
       categories (name),
       country:country_id (name),
       region:region_id (name),
-      subregion:subregion_id (name)
+      subregion:subregion_id (name),
+      ad_media (
+        id,
+        url,
+        is_cover
+      )
     `)
     .eq("slug", params.slug)
     .eq("status", "active")

@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useFormStatus } from 'react-dom';
 import { createAd } from '@/lib/actions/ad-create.actions';
 import { Button } from '@/components/ui/button';
@@ -11,8 +11,10 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
 import type { Location } from '@/lib/types';
-import { AlertCircle } from 'lucide-react';
+import { AlertCircle, Star, X } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
+import Image from 'next/image';
+import { cn } from '@/lib/utils';
 
 function SubmitButton() {
   const { pending } = useFormStatus();
@@ -29,6 +31,12 @@ export default function CreateAdForm() {
   const [countries, setCountries] = useState<Location[]>([]);
   const [regions, setRegions] = useState<Location[]>([]);
   const [subregions, setSubregions] = useState<Location[]>([]);
+  
+  const [selectedImages, setSelectedImages] = useState<File[]>([]);
+  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+  const [coverImageIndex, setCoverImageIndex] = useState(0);
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [selectedCountryId, setSelectedCountryId] = useState<number | null>(null);
   const [selectedRegionId, setSelectedRegionId] = useState<number | null>(null);
@@ -83,8 +91,34 @@ export default function CreateAdForm() {
     }
   };
 
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      const filesArray = Array.from(e.target.files);
+      const newImages = [...selectedImages, ...filesArray].slice(0, 5);
+      setSelectedImages(newImages);
+
+      const newPreviews = newImages.map(file => URL.createObjectURL(file));
+      setImagePreviews(newPreviews);
+    }
+  };
+
+  const removeImage = (index: number) => {
+    const newImages = selectedImages.filter((_, i) => i !== index);
+    const newPreviews = imagePreviews.filter((_, i) => i !== index);
+    setSelectedImages(newImages);
+    setImagePreviews(newPreviews);
+    if (coverImageIndex === index) {
+      setCoverImageIndex(0);
+    } else if (coverImageIndex > index) {
+      setCoverImageIndex(coverImageIndex - 1);
+    }
+  };
+
   return (
     <form action={createAd} className="space-y-6">
+      {/* Hidden input for cover image index */}
+      <input type="hidden" name="cover_image_index" value={coverImageIndex} />
+      
       <div className="space-y-2">
         <Label htmlFor="title">Título del Anuncio</Label>
         <Input 
@@ -94,17 +128,68 @@ export default function CreateAdForm() {
           required 
         />
       </div>
+
        <div className="space-y-2">
-        <Label htmlFor="image">Imagen del Anuncio</Label>
+        <Label htmlFor="images">Imágenes del Anuncio (hasta 5)</Label>
         <Input 
-          id="image" 
-          name="image" 
+          id="images" 
+          name="images" 
           type="file"
           accept="image/png, image/jpeg, image/webp"
           required 
+          multiple
+          onChange={handleImageChange}
+          ref={fileInputRef}
+          className="hidden"
         />
-        <p className="text-xs text-muted-foreground">Sube una imagen principal para tu anuncio (PNG, JPG, WEBP).</p>
+        <Button type="button" variant="outline" onClick={() => fileInputRef.current?.click()}>
+          Seleccionar Imágenes
+        </Button>
+        <p className="text-xs text-muted-foreground">Sube hasta 5 imágenes para tu anuncio (PNG, JPG, WEBP). La primera imagen será la de portada por defecto.</p>
+        
+        {imagePreviews.length > 0 && (
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2 mt-4">
+            {imagePreviews.map((preview, index) => (
+              <div key={index} className="relative group aspect-square">
+                <Image
+                  src={preview}
+                  alt={`Vista previa ${index + 1}`}
+                  fill
+                  sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 20vw"
+                  className="object-cover rounded-md"
+                />
+                <div className="absolute inset-0 bg-black bg-opacity-30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                   <button
+                    type="button"
+                    onClick={() => setCoverImageIndex(index)}
+                    className={cn(
+                      "p-1.5 rounded-full bg-white/70 hover:bg-white",
+                      coverImageIndex === index ? "text-yellow-400" : "text-gray-600"
+                    )}
+                    aria-label="Marcar como portada"
+                  >
+                    <Star className="h-5 w-5" fill={coverImageIndex === index ? "currentColor" : "none"} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => removeImage(index)}
+                    className="p-1.5 rounded-full bg-white/70 text-red-500 hover:bg-white"
+                    aria-label="Eliminar imagen"
+                  >
+                    <X className="h-5 w-5" />
+                  </button>
+                </div>
+                {coverImageIndex === index && (
+                   <div className="absolute top-1 left-1 bg-yellow-400 text-white p-1 rounded-full">
+                     <Star className="h-3 w-3" />
+                   </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
       </div>
+
       <div className="space-y-2">
         <Label htmlFor="description">Descripción</Label>
         <Textarea

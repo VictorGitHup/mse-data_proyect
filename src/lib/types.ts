@@ -11,11 +11,20 @@ export type Ad = {
   status: "active" | "inactive" | "draft" | "expired";
   created_at: string;
   updated_at: string | null;
-  image_url: string | null;
   video_url: string | null;
   boosted_until: string | null;
   slug: string | null;
 };
+
+export type AdMedia = {
+  id: number;
+  ad_id: number;
+  user_id: string;
+  url: string;
+  type: 'image' | 'video';
+  is_cover: boolean;
+  created_at: string;
+}
 
 export type Profile = {
   id: string;
@@ -49,4 +58,9 @@ export type AdWithRelations = Ad & {
   country: Pick<Location, 'name'> | null;
   region: Pick<Location, 'name'> | null;
   subregion: Pick<Location, 'name'> | null;
+  ad_media: Pick<AdMedia, 'id' | 'url' | 'is_cover'>[] | null;
+};
+
+export type AdForTable = Pick<Ad, 'id' | 'title' | 'created_at' | 'status' | 'slug'> & {
+  category: { name: string } | null;
 };

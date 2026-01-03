@@ -14,6 +14,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Mail, Phone, Send, Link as LinkIcon, User as UserIcon, MapPin } from "lucide-react";
 import type { AdWithRelations } from "@/lib/types";
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 
 interface AdViewProps {
   ad: AdWithRelations;
@@ -29,6 +30,8 @@ export default function AdView({ ad }: AdViewProps) {
   ].filter(Boolean);
   
   const locationString = locationParts.join(', ');
+
+  const sortedMedia = ad.ad_media?.sort((a, b) => (a.is_cover ? -1 : 1)) || [];
 
   return (
     <div className="container mx-auto p-4 md:p-8">
@@ -55,16 +58,26 @@ export default function AdView({ ad }: AdViewProps) {
               </div>
             </CardHeader>
             <CardContent>
-              {ad.image_url && (
-                <div className="relative w-full h-96 rounded-lg overflow-hidden mb-6">
-                  <Image
-                    src={ad.image_url}
-                    alt={ad.title}
-                    layout="fill"
-                    objectFit="cover"
-                    className="bg-muted"
-                  />
-                </div>
+              {sortedMedia.length > 0 && (
+                <Carousel className="w-full mb-6">
+                  <CarouselContent>
+                    {sortedMedia.map((media) => (
+                      <CarouselItem key={media.id}>
+                        <div className="relative w-full h-96 rounded-lg overflow-hidden">
+                          <Image
+                            src={media.url}
+                            alt={ad.title}
+                            fill
+                            objectFit="cover"
+                            className="bg-muted"
+                          />
+                        </div>
+                      </CarouselItem>
+                    ))}
+                  </CarouselContent>
+                  <CarouselPrevious className="left-4" />
+                  <CarouselNext className="right-4" />
+                </Carousel>
               )}
               <div className="prose prose-lg max-w-none text-foreground">
                 <p>{ad.description}</p>
