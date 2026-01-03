@@ -116,8 +116,8 @@ Es el rol con más privilegios, centrado en la creación y gestión de contenido
   - ✅ **Gestionar sus Anuncios:** Puede ver, editar, activar/desactivar y eliminar **únicamente sus propios anuncios**.
   - ✅ **Gestionar Multimedia de Anuncios:** Puede subir, cambiar y eliminar imágenes y videos asociados **a sus propios anuncios**.
   - ✅ **Moderar Comentarios:** Puede ver todos los comentarios en sus anuncios (pendientes, aprobados, rechazados) y puede **actualizar su estado** (ej. aprobar un comentario pendiente).
+  - ✅ **Potenciar Anuncios:** Puede realizar un pago para que sus anuncios aparezcan destacados por un tiempo determinado.
+  - ✅ **Ver Estadísticas:** Puede ver métricas de rendimiento de sus anuncios (vistas, clics, etc.).
 - **Restricciones:**
   - ❌ No puede modificar los anuncios de otros anunciantes.
   - ❌ No puede calificar ni comentar sus propios anuncios.
-
-    
