@@ -1,3 +1,4 @@
+
 # Plataforma de Anuncios Clasificados
 
 Esta es una aplicación web full-stack construida con Next.js y Supabase que permite a los usuarios registrarse, publicar y gestionar anuncios clasificados. La plataforma distingue entre usuarios estándar y anunciantes, ofreciendo un dashboard dedicado para la gestión de publicaciones.
@@ -5,7 +6,7 @@ Esta es una aplicación web full-stack construida con Next.js y Supabase que per
 ## Stack Tecnológico
 
 - **Framework:** [Next.js](https://nextjs.org/) (con App Router, Server Components y Server Actions)
-- **Base de Datos y Autenticación:** [Supabase](https://supabase.io/)
+- **Base de Datos, Autenticación y Almacenamiento:** [Supabase](https://supabase.io/)
 - **UI:** [React](https://react.dev/)
 - **Estilos:** [Tailwind CSS](https://tailwindcss.com/)
 - **Componentes UI:** [ShadCN/UI](https://ui.shadcn.com/)
@@ -39,7 +40,7 @@ El proyecto requiere una instancia de Supabase para la base de datos, autenticac
 
 #### a. Ejecutar el Script de Schema
 
-El archivo `supabase/schema.sql` contiene toda la configuración necesaria.
+El archivo `supabase/schema.sql` contiene toda la configuración necesaria para la base de datos y el almacenamiento.
 
 1.  Ve al **SQL Editor** en tu panel de Supabase.
 2.  Crea una **New query**.
@@ -83,73 +84,40 @@ El sistema se basa en un conjunto de Políticas de Seguridad a Nivel de Fila (RL
 
 - **Capacidades:**
   - ✅ **Ver Anuncios:** Puede explorar y ver todos los anuncios cuyo estado sea `active`.
-  - ✅ **Ver Perfiles:** Puede ver la información pública de los perfiles de los usuarios (nombre de usuario, etc.).
-  - ✅ **Ver Imágenes:** Puede ver las imágenes de avatares y anuncios.
+  - ✅ **Ver Perfiles Públicos:** Puede ver la información pública de los perfiles (nombre de usuario, avatar, información de contacto).
+  - ✅ **Ver Contenido Multimedia:** Puede ver imágenes y videos de anuncios, así como avatares.
+  - ✅ **Ver Calificaciones y Comentarios:** Puede leer las calificaciones y los comentarios `aprobados` en los anuncios.
 - **Restricciones:**
   - ❌ No puede crear, editar o eliminar ningún dato.
   - ❌ No puede ver anuncios en estado `draft`, `inactive` o `expired`.
+  - ❌ No puede calificar ni comentar.
 
 ### 2. Usuario Estándar (Rol: `USER`)
 
-Hereda todos los permisos del visitante anónimo y además puede gestionar su propia identidad.
+Hereda todos los permisos del visitante anónimo y además puede interactuar con la plataforma.
 
 - **Capacidades:**
   - ✅ **Gestionar su Perfil:** Puede actualizar su propio nombre completo, nombre de usuario y avatar.
+  - ✅ **Calificar Anuncios:** Puede añadir o actualizar su propia calificación (1-5 estrellas) en cualquier anuncio.
+  - ✅ **Comentar Anuncios:** Puede publicar comentarios en los anuncios. Estos comentarios comenzarán en estado `pending`.
+  - ✅ **Gestionar sus Comentarios:** Puede eliminar sus propios comentarios.
 - **Restricciones:**
-  - ❌ No puede crear, editar o eliminar anuncios. El acceso al dashboard y a los formularios de creación está bloqueado por middleware.
+  - ❌ No puede crear, editar o eliminar anuncios.
+  - ❌ No puede moderar (aprobar/rechazar) comentarios de otros.
+  - ❌ No puede añadir información de contacto público de anunciante.
 
 ### 3. Anunciante (Rol: `ADVERTISER`)
 
 Es el rol con más privilegios, centrado en la creación y gestión de contenido. Hereda los permisos del Usuario Estándar y además:
 
 - **Capacidades:**
-  - ✅ **Crear Anuncios:** Puede publicar nuevos anuncios.
+  - ✅ **Gestionar Perfil de Anunciante:** Puede añadir y actualizar su información de contacto público (email, WhatsApp, Telegram, etc.).
+  - ✅ **Crear Anuncios:** Puede publicar nuevos anuncios con imágenes y videos.
   - ✅ **Gestionar sus Anuncios:** Puede ver, editar, activar/desactivar y eliminar **únicamente sus propios anuncios**.
-  - ✅ **Gestionar Imágenes de Anuncios:** Puede subir, cambiar y eliminar imágenes asociadas **a sus propios anuncios**.
+  - ✅ **Gestionar Multimedia de Anuncios:** Puede subir, cambiar y eliminar imágenes y videos asociados **a sus propios anuncios**.
+  - ✅ **Moderar Comentarios:** Puede ver todos los comentarios en sus anuncios (pendientes, aprobados, rechazados) y puede **actualizar su estado** (ej. aprobar un comentario pendiente).
 - **Restricciones:**
   - ❌ No puede modificar los anuncios de otros anunciantes.
+  - ❌ No puede calificar ni comentar sus propios anuncios.
 
-## Flujos Funcionales
-
-### 1. Registro de Usuario
-
-- **Objetivo:** Permitir que nuevos usuarios creen una cuenta, eligiendo entre un rol de "Usuario Estándar" o "Anunciante".
-- **Flujo:**
-  1.  El usuario navega a la página de registro (`/auth/register`).
-  2.  **Paso 1:** Completa sus datos básicos (correo, contraseña, nombre de usuario). El sistema verifica en tiempo real que el nombre de usuario no esté en uso.
-  3.  **Paso 2:** Selecciona un rol (`USER` o `ADVERTISER`).
-  4.  Al enviar, `supabase.auth.signUp` se ejecuta. Los datos del perfil (username, role) se pasan como metadatos.
-  5.  El **trigger `on_auth_user_created`** en Supabase se dispara y ejecuta la función `handle_new_user`, que crea la entrada correspondiente en la tabla `public.profiles`.
-  6.  El usuario es redirigido a la página de login con un mensaje para que confirme su correo.
-
-### 2. Inicio de Sesión
-
-- **Objetivo:** Autenticar a un usuario y darle acceso a la plataforma según su rol.
-- **Flujo:**
-  1.  El usuario introduce su correo y contraseña en `/auth/login`.
-  2.  La Server Action `login` valida las credenciales con Supabase.
-  3.  Si la autenticación es exitosa, se consulta el rol del usuario en la tabla `profiles`.
-  4.  **Redirección basada en rol:**
-      - Rol `ADVERTISER` -> Redirigido a su panel de control (`/dashboard`).
-      - Rol `USER` -> Redirigido a la página principal (`/`).
-
-### 3. Gestión de Anuncios (Rol: Anunciante)
-
-#### a. Visualización y Filtrado (Dashboard)
-
-- **Objetivo:** Proporcionar al anunciante una vista centralizada para gestionar sus anuncios.
-- **Flujo:**
-  1.  El anunciante inicia sesión y es redirigido a `/dashboard`.
-  2.  Se muestra una **tabla** con sus anuncios (Título, Categoría, Estado, Fecha de Creación).
-  3.  El estado se representa con un `Badge` de color para una identificación rápida.
-  4.  El usuario puede buscar anuncios por título y filtrar por estado.
-
-#### b. Creación y Edición de Anuncios
-
-- **Objetivo:** Permitir a un anunciante publicar o modificar un anuncio.
-- **Flujo:**
-  1.  Desde el dashboard, hace clic en "Crear Nuevo Anuncio" (redirige a `/ads/create`) o en "Gestionar" en un anuncio existente (redirige a `/dashboard/ads/[id]/manage`).
-  2.  Completa o modifica los campos del formulario.
-  3.  Al enviar, las Server Actions (`createAd` o `updateAd`) validan los datos y ejecutan la inserción o actualización en la tabla `ads`.
-  4.  Gracias a RLS, la base de datos solo permite estas operaciones si el `user_id` coincide con el del usuario autenticado.
-  5.  El usuario es redirigido de vuelta al dashboard.
+    

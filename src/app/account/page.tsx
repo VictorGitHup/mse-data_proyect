@@ -25,5 +25,8 @@ export default async function AccountPage() {
     throw new Error("Could not fetch user profile.");
   }
 
+  // The AccountForm component now expects a more detailed profile object
   return <AccountForm user={user} profile={profile} />;
 }
+
+    
