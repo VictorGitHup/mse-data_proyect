@@ -4,8 +4,19 @@ import { redirect } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import AdvertiserDashboard from '@/components/ads/AdvertiserDashboard';
+import { getAdsForAdvertiser } from '@/lib/actions/ad-data.actions';
 
-export default async function DashboardPage() {
+export const dynamic = 'force-dynamic';
+
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams?: {
+    q?: string;
+    status?: string;
+    page?: string;
+  };
+}) {
     const supabase = await createSupabaseServerClient();
     const { data: { user } } = await supabase.auth.getUser();
 
@@ -14,22 +25,21 @@ export default async function DashboardPage() {
         redirect('/auth/login');
     }
 
-    const { data: ads, error } = await supabase
-        .from('ads')
-        .select('id, title, created_at, status')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
+    const query = searchParams?.q || '';
+    const status = searchParams?.status || 'all';
+
+    const { data: ads, error } = await getAdsForAdvertiser(query, status);
 
     if (error) {
         console.error("Error fetching ads:", error);
-        // Handle error appropriately, maybe show a message
+        // We can show a toast or an error message here. For now, we'll pass an empty array.
     }
     
     return (
         <div className="container mx-auto p-4 md:p-8">
-            <header className="flex justify-between items-center mb-12">
-                <h1 className="font-headline text-4xl font-bold tracking-tighter sm:text-5xl">
-                    Panel de Anunciante
+            <header className="flex justify-between items-center mb-6">
+                <h1 className="text-3xl font-bold tracking-tight">
+                    Mis Anuncios
                 </h1>
                 <Link href="/ads/create">
                     <Button>Crear Nuevo Anuncio</Button>

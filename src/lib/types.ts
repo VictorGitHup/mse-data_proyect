@@ -17,6 +17,18 @@ export type Ad = {
   slug: string | null;
 };
 
+export type Profile = {
+  id: string;
+  username: string;
+  avatar_url: string | null;
+  role: "USER" | "ADVERTISER";
+  full_name: string | null;
+  contact_email: string | null;
+  contact_whatsapp: string | null;
+  contact_telegram: string | null;
+  contact_social_url: string | null;
+};
+
 export type Location = {
     id: number;
     name: string;
@@ -25,10 +37,16 @@ export type Location = {
     code: string | null;
 };
 
-export type AdForTable = {
+export type Category = {
     id: number;
-    title: string;
-    created_at: string;
-    status: 'active' | 'inactive' | 'draft' | 'expired';
-    category?: { name: string };
+    name: string;
+};
+
+// Type for joins, including related table data
+export type AdWithRelations = Ad & {
+  profiles: Pick<Profile, 'username' | 'avatar_url' | 'contact_email' | 'contact_whatsapp' | 'contact_telegram' | 'contact_social_url'>;
+  categories: Pick<Category, 'name'> | null;
+  country: Pick<Location, 'name'> | null;
+  region: Pick<Location, 'name'> | null;
+  subregion: Pick<Location, 'name'> | null;
 };

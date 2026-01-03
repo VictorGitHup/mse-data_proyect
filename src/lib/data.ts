@@ -1,5 +1,6 @@
 
-export const categories = [
+
+export const categories_DEPRECATED = [
   { id: 1, name: 'Scorts' },
   { id: 2, name: 'Chicas Trans' },
   { id: 3, name: 'Scorts Gay' },

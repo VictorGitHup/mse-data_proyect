@@ -9,9 +9,10 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { categories } from '@/lib/data';
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
 import type { Location } from '@/lib/types';
+import { AlertCircle } from 'lucide-react';
+import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 
 function SubmitButton() {
   const { pending } = useFormStatus();
@@ -24,6 +25,7 @@ function SubmitButton() {
 
 export default function CreateAdForm() {
   const supabase = createSupabaseBrowserClient();
+  const [categories, setCategories] = useState<{ id: number; name: string }[]>([]);
   const [countries, setCountries] = useState<Location[]>([]);
   const [regions, setRegions] = useState<Location[]>([]);
   const [subregions, setSubregions] = useState<Location[]>([]);
@@ -32,15 +34,19 @@ export default function CreateAdForm() {
   const [selectedRegionId, setSelectedRegionId] = useState<number | null>(null);
   
   useEffect(() => {
-    async function getCountries() {
-      const { data, error } = await supabase
+    async function getInitialData() {
+      const { data: categoryData } = await supabase.from('categories').select('*');
+      if (categoryData) setCategories(categoryData);
+
+      const { data: countryData } = await supabase
         .from('locations')
         .select('*')
         .eq('type', 'country')
+        .is('parent_id', null)
         .order('name', { ascending: true });
-      if (data) setCountries(data);
+      if (countryData) setCountries(countryData);
     }
-    getCountries();
+    getInitialData();
   }, [supabase]);
 
   const handleCountryChange = async (countryId: string) => {
@@ -87,6 +93,17 @@ export default function CreateAdForm() {
           placeholder="Ej: Alojamiento con vistas al mar" 
           required 
         />
+      </div>
+       <div className="space-y-2">
+        <Label htmlFor="image">Imagen del Anuncio</Label>
+        <Input 
+          id="image" 
+          name="image" 
+          type="file"
+          accept="image/png, image/jpeg, image/webp"
+          required 
+        />
+        <p className="text-xs text-muted-foreground">Sube una imagen principal para tu anuncio (PNG, JPG, WEBP).</p>
       </div>
       <div className="space-y-2">
         <Label htmlFor="description">Descripción</Label>
@@ -168,6 +185,14 @@ export default function CreateAdForm() {
           )}
         </div>
       )}
+      
+      <Alert>
+        <AlertCircle className="h-4 w-4" />
+        <AlertTitle>Información de Contacto</AlertTitle>
+        <AlertDescription>
+          La información de contacto (email, WhatsApp, etc.) que configuraste en tu perfil se mostrará en este anuncio. Puedes actualizarla en la sección "Mi Perfil".
+        </AlertDescription>
+      </Alert>
 
       <SubmitButton />
     </form>
