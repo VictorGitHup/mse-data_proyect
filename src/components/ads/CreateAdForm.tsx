@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useFormStatus } from 'react-dom';
 import { createAd } from '@/lib/actions/ad-create.actions';
 import { Button } from '@/components/ui/button';
@@ -9,8 +9,9 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { categories, countries } from '@/lib/data';
-import type { Region } from '@/lib/data';
+import { categories } from '@/lib/data';
+import { createSupabaseBrowserClient } from '@/lib/supabase/client';
+import type { Location } from '@/lib/types';
 
 function SubmitButton() {
   const { pending } = useFormStatus();
@@ -22,23 +23,58 @@ function SubmitButton() {
 }
 
 export default function CreateAdForm() {
-  const [selectedCountry, setSelectedCountry] = useState<string | null>(null);
-  const [selectedRegion, setSelectedRegion] = useState<string | null>(null);
-  const [regions, setRegions] = useState<Region[]>([]);
-  const [subregions, setSubregions] = useState<string[]>([]);
+  const supabase = createSupabaseBrowserClient();
+  const [countries, setCountries] = useState<Location[]>([]);
+  const [regions, setRegions] = useState<Location[]>([]);
+  const [subregions, setSubregions] = useState<Location[]>([]);
 
-  const handleCountryChange = (countryName: string) => {
-    setSelectedCountry(countryName);
-    setSelectedRegion(null);
+  const [selectedCountryId, setSelectedCountryId] = useState<number | null>(null);
+  const [selectedRegionId, setSelectedRegionId] = useState<number | null>(null);
+  
+  useEffect(() => {
+    async function getCountries() {
+      const { data, error } = await supabase
+        .from('locations')
+        .select('*')
+        .eq('type', 'country')
+        .order('name', { ascending: true });
+      if (data) setCountries(data);
+    }
+    getCountries();
+  }, [supabase]);
+
+  const handleCountryChange = async (countryId: string) => {
+    const id = parseInt(countryId, 10);
+    setSelectedCountryId(id);
+    setSelectedRegionId(null);
+    setRegions([]);
     setSubregions([]);
-    const country = countries.find(c => c.name === countryName);
-    setRegions(country ? country.regions : []);
+    
+    if (id) {
+      const { data, error } = await supabase
+        .from('locations')
+        .select('*')
+        .eq('type', 'region')
+        .eq('parent_id', id)
+        .order('name', { ascending: true });
+      if (data) setRegions(data);
+    }
   };
 
-  const handleRegionChange = (regionName: string) => {
-    setSelectedRegion(regionName);
-    const region = regions.find(r => r.name === regionName);
-    setSubregions(region ? region.subregions : []);
+  const handleRegionChange = async (regionId: string) => {
+    const id = parseInt(regionId, 10);
+    setSelectedRegionId(id);
+    setSubregions([]);
+
+    if (id) {
+      const { data, error } = await supabase
+        .from('locations')
+        .select('*')
+        .eq('type', 'subregion')
+        .eq('parent_id', id)
+        .order('name', { ascending: true });
+      if (data) setSubregions(data);
+    }
   };
 
   return (
@@ -80,14 +116,14 @@ export default function CreateAdForm() {
           </Select>
         </div>
         <div className="space-y-2">
-          <Label htmlFor="country">País</Label>
-           <Select name="country" onValueChange={handleCountryChange} required>
-            <SelectTrigger id="country">
+          <Label htmlFor="country_id">País</Label>
+           <Select name="country_id" onValueChange={handleCountryChange} required>
+            <SelectTrigger id="country_id">
               <SelectValue placeholder="Selecciona un país" />
             </SelectTrigger>
             <SelectContent>
               {countries.map((country) => (
-                <SelectItem key={country.name} value={country.name}>
+                <SelectItem key={country.id} value={String(country.id)}>
                   {country.name}
                 </SelectItem>
               ))}
@@ -96,34 +132,34 @@ export default function CreateAdForm() {
         </div>
       </div>
 
-      {selectedCountry && (
+      {selectedCountryId && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-2">
-            <Label htmlFor="region">Región / Provincia</Label>
-            <Select name="region" onValueChange={handleRegionChange} required>
-              <SelectTrigger id="region">
+            <Label htmlFor="region_id">Región / Provincia</Label>
+            <Select name="region_id" onValueChange={handleRegionChange} required>
+              <SelectTrigger id="region_id">
                 <SelectValue placeholder="Selecciona una región" />
               </SelectTrigger>
               <SelectContent>
                 {regions.map((region) => (
-                  <SelectItem key={region.name} value={region.name}>
+                  <SelectItem key={region.id} value={String(region.id)}>
                     {region.name}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
-          {selectedRegion && subregions.length > 0 && (
+          {selectedRegionId && subregions.length > 0 && (
             <div className="space-y-2">
-              <Label htmlFor="subregion">Ciudad / Subregión</Label>
-              <Select name="subregion" required>
-                <SelectTrigger id="subregion">
+              <Label htmlFor="subregion_id">Ciudad / Subregión</Label>
+              <Select name="subregion_id">
+                <SelectTrigger id="subregion_id">
                   <SelectValue placeholder="Selecciona una subregión" />
                 </SelectTrigger>
                 <SelectContent>
                   {subregions.map((subregion) => (
-                    <SelectItem key={subregion} value={subregion}>
-                      {subregion}
+                    <SelectItem key={subregion.id} value={String(subregion.id)}>
+                      {subregion.name}
                     </SelectItem>
                   ))}
                 </SelectContent>

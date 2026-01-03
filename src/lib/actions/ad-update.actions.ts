@@ -10,9 +10,9 @@ const adUpdateSchema = z.object({
   title: z.string().min(3, 'El título debe tener al menos 3 caracteres.'),
   description: z.string().min(10, 'La descripción debe tener al menos 10 caracteres.'),
   category_id: z.coerce.number().int().positive('Debes seleccionar una categoría.'),
-  country: z.string().min(1, 'Debes seleccionar un país.'),
-  region: z.string().min(1, 'Debes seleccionar una región.'),
-  subregion: z.string().optional(),
+  country_id: z.coerce.number().int().positive('Debes seleccionar un país.'),
+  region_id: z.coerce.number().int().positive('Debes seleccionar una región.'),
+  subregion_id: z.coerce.number().int().optional(),
 });
 
 export async function updateAd(adId: number, formData: FormData) {
@@ -35,31 +35,18 @@ export async function updateAd(adId: number, formData: FormData) {
     return redirect(`${errorRedirectUrl}?error=${encodeURIComponent(firstError || 'Datos de formulario inválidos.')}`);
   }
 
-  const { title, description, category_id, country, region, subregion } = validatedFields.data;
+  const { title, description, category_id, country_id, region_id, subregion_id } = validatedFields.data;
 
   try {
-    const { data: countryData, error: countryError } = await supabase.from('locations').select('id').eq('name', country).eq('type', 'country').single();
-    if (countryError || !countryData) throw new Error(`País no encontrado: ${country}`);
-
-    const { data: regionData, error: regionError } = await supabase.from('locations').select('id').eq('name', region).eq('type', 'region').eq('parent_id', countryData.id).single();
-    if (regionError || !regionData) throw new Error(`Región no encontrada: ${region}`);
-    
-    let subregionId = null;
-    if (subregion && subregion.length > 0) {
-      const { data: subregionData, error: subregionError } = await supabase.from('locations').select('id').eq('name', subregion).eq('type', 'subregion').eq('parent_id', regionData.id).single();
-      if (subregionError || !subregionData) throw new Error(`Subregión no encontrada: ${subregion}`);
-      subregionId = subregionData.id;
-    }
-
     const { error: updateError } = await supabase
       .from('ads')
       .update({
         title,
         description,
         category_id,
-        country_id: countryData.id,
-        region_id: regionData.id,
-        subregion_id: subregionId,
+        country_id,
+        region_id,
+        subregion_id: subregion_id || null,
         updated_at: new Date().toISOString(),
       })
       .eq('id', adId)
