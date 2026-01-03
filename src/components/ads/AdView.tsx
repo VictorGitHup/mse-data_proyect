@@ -63,14 +63,24 @@ export default function AdView({ ad }: AdViewProps) {
                   <CarouselContent>
                     {sortedMedia.map((media) => (
                       <CarouselItem key={media.id}>
-                        <div className="relative w-full h-96 rounded-lg overflow-hidden">
-                          <Image
-                            src={media.url}
-                            alt={ad.title}
-                            fill
-                            objectFit="cover"
-                            className="bg-muted"
-                          />
+                        <div className="relative w-full aspect-video rounded-lg overflow-hidden bg-muted">
+                           {media.type === 'image' ? (
+                             <Image
+                                src={media.url}
+                                alt={ad.title}
+                                fill
+                                style={{ objectFit: 'contain' }}
+                                className="bg-muted"
+                              />
+                           ) : (
+                              <video
+                                src={media.url}
+                                controls
+                                className="w-full h-full object-contain"
+                              >
+                                Tu navegador no soporta el tag de video.
+                              </video>
+                           )}
                         </div>
                       </CarouselItem>
                     ))}

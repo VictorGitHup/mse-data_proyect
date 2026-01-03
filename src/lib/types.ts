@@ -11,9 +11,8 @@ export type Ad = {
   status: "active" | "inactive" | "draft" | "expired";
   created_at: string;
   updated_at: string | null;
-  video_url: string | null;
   boosted_until: string | null;
-  slug: string | null;
+  slug: string;
 };
 
 export type AdMedia = {
@@ -58,7 +57,7 @@ export type AdWithRelations = Ad & {
   country: Pick<Location, 'name'> | null;
   region: Pick<Location, 'name'> | null;
   subregion: Pick<Location, 'name'> | null;
-  ad_media: Pick<AdMedia, 'id' | 'url' | 'is_cover'>[] | null;
+  ad_media: Pick<AdMedia, 'id' | 'url' | 'is_cover' | 'type'>[] | null;
 };
 
 export type AdForTable = Pick<Ad, 'id' | 'title' | 'created_at' | 'status' | 'slug'> & {
