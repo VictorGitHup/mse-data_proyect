@@ -1,10 +1,9 @@
 
 export const categories = [
-  { id: 1, name: 'Alojamiento' },
-  { id: 2, name: 'Transporte' },
-  { id: 3, name: 'Tours y Actividades' },
-  { id: 4, name: 'Comida y Bebida' },
-  { id: 5, name: 'Eventos' },
+  { id: 1, name: 'Scorts' },
+  { id: 2, name: 'Chicas Trans' },
+  { id: 3, name: 'Scorts Gay' },
+  { id: 4, name: 'Servicios Virtuales' },
 ];
 
 export type Region = {
@@ -19,82 +18,188 @@ export type Country = {
 
 export const countries: Country[] = [
   {
-    name: 'México',
-    regions: [
-      {
-        name: 'Ciudad de México',
-        subregions: ['Cuauhtémoc', 'Miguel Hidalgo', 'Benito Juárez'],
-      },
-      {
-        name: 'Jalisco',
-        subregions: [],
-      },
-      {
-        name: 'Nuevo León',
-        subregions: [],
-      },
-      {
-        name: 'Quintana Roo',
-        subregions: [],
-      },
-      {
-        name: 'Baja California',
-        subregions: [],
-      },
-      {
-        name: 'Yucatán',
-        subregions: [],
-      },
-    ],
-  },
-  {
-    name: 'España',
-    regions: [
-      {
-        name: 'Andalucía',
-        subregions: ['Sevilla', 'Málaga', 'Granada'],
-      },
-      {
-        name: 'Cataluña',
-        subregions: ['Barcelona', 'Girona', 'Tarragona'],
-      },
-      {
-        name: 'Comunidad de Madrid',
-        subregions: ['Madrid', 'Alcalá de Henares', 'Getafe'],
-      },
-    ],
-  },
-   {
-    name: 'Argentina',
-    regions: [
-      {
-        name: 'Buenos Aires',
-        subregions: ['La Plata', 'Mar del Plata', 'Bahía Blanca'],
-      },
-      {
-        name: 'Ciudad Autónoma de Buenos Aires',
-        subregions: ['Palermo', 'Recoleta', 'San Telmo'],
-      },
-      {
-        name: 'Córdoba',
-        subregions: ['Córdoba Capital', 'Villa Carlos Paz', 'Río Cuarto'],
-      },
-    ],
-  },
-   {
     name: 'Colombia',
     regions: [
       {
+        name: 'Amazonas',
+        subregions: ['Leticia', 'Puerto Nariño'],
+      },
+      {
         name: 'Antioquia',
-        subregions: ['Medellín', 'Envigado', 'Sabaneta'],
+        subregions: [
+          'Medellín',
+          'Envigado',
+          'Itagüí',
+          'Bello',
+          'Sabaneta',
+          'Rionegro',
+          'Apartadó',
+        ],
+      },
+      {
+        name: 'Arauca',
+        subregions: ['Arauca', 'Saravena', 'Arauquita', 'Tame'],
+      },
+      {
+        name: 'Atlántico',
+        subregions: [
+          'Barranquilla',
+          'Soledad',
+          'Malambo',
+          'Puerto Colombia',
+          'Galapa',
+        ],
+      },
+      {
+        name: 'Bolívar',
+        subregions: [
+          'Cartagena',
+          'Magangué',
+          'Turbaco',
+          'Arjona',
+          'El Carmen de Bolívar',
+        ],
+      },
+      {
+        name: 'Boyacá',
+        subregions: [
+          'Tunja',
+          'Duitama',
+          'Sogamoso',
+          'Chiquinquirá',
+          'Paipa',
+        ],
+      },
+      {
+        name: 'Caldas',
+        subregions: ['Manizales', 'Chinchiná', 'Villamaría', 'La Dorada'],
+      },
+      {
+        name: 'Caquetá',
+        subregions: ['Florencia', 'San Vicente del Caguán', 'Puerto Rico'],
+      },
+      {
+        name: 'Casanare',
+        subregions: ['Yopal', 'Aguazul', 'Villanueva', 'Tauramena'],
+      },
+      {
+        name: 'Cauca',
+        subregions: ['Popayán', 'Santander de Quilichao', 'Puerto Tejada'],
+      },
+      {
+        name: 'Cesar',
+        subregions: ['Valledupar', 'Aguachica', 'Codazzi', 'La Jagua de Ibirico'],
+      },
+      {
+        name: 'Chocó',
+        subregions: ['Quibdó', 'Istmina', 'Tadó', 'Bahía Solano'],
+      },
+      {
+        name: 'Córdoba',
+        subregions: ['Montería', 'Lorica', 'Sahagún', 'Cereté'],
       },
       {
         name: 'Cundinamarca',
-        subregions: ['Bogotá', 'Soacha', 'Chía'],
+        subregions: [
+          'Bogotá',
+          'Soacha',
+          'Chía',
+          'Zipaquirá',
+          'Facatativá',
+          'Mosquera',
+          'Madrid',
+        ],
+      },
+      {
+        name: 'Guainía',
+        subregions: ['Inírida'],
+      },
+      {
+        name: 'Guaviare',
+        subregions: ['San José del Guaviare', 'Calamar'],
+      },
+      {
+        name: 'Huila',
+        subregions: ['Neiva', 'Pitalito', 'Garzón', 'La Plata'],
+      },
+      {
+        name: 'La Guajira',
+        subregions: ['Riohacha', 'Maicao', 'Uribia', 'Manaure'],
+      },
+      {
+        name: 'Magdalena',
+        subregions: ['Santa Marta', 'Ciénaga', 'Fundación', 'El Banco'],
+      },
+      {
+        name: 'Meta',
+        subregions: [
+          'Villavicencio',
+          'Acacías',
+          'Granada',
+          'Puerto López',
+        ],
+      },
+      {
+        name: 'Nariño',
+        subregions: ['Pasto', 'Tumaco', 'Ipiales', 'La Unión'],
+      },
+      {
+        name: 'Norte de Santander',
+        subregions: ['Cúcuta', 'Ocaña', 'Pamplona', 'Villa del Rosario'],
+      },
+      {
+        name: 'Putumayo',
+        subregions: ['Mocoa', 'Puerto Asís', 'Orito'],
+      },
+      {
+        name: 'Quindío',
+        subregions: ['Armenia', 'Calarcá', 'Montenegro', 'La Tebaida'],
+      },
+      {
+        name: 'Risaralda',
+        subregions: ['Pereira', 'Dosquebradas', 'Santa Rosa de Cabal'],
+      },
+      {
+        name: 'San Andrés y Providencia',
+        subregions: ['San Andrés', 'Providencia'],
+      },
+      {
+        name: 'Santander',
+        subregions: [
+          'Bucaramanga',
+          'Floridablanca',
+          'Girón',
+          'Piedecuesta',
+          'Barrancabermeja',
+        ],
+      },
+      {
+        name: 'Sucre',
+        subregions: ['Sincelejo', 'Corozal', 'Sampués'],
+      },
+      {
+        name: 'Tolima',
+        subregions: ['Ibagué', 'Espinal', 'Melgar', 'Honda'],
       },
       {
         name: 'Valle del Cauca',
-        subregions: ['Cali', 'Palmira', 'Buenaventura'],
+        subregions: [
+          'Cali',
+          'Palmira',
+          'Buenaventura',
+          'Tuluá',
+          'Buga',
+          'Jamundí',
+          'Cartago',
+        ],
+      },
+      {
+        name: 'Vaupés',
+        subregions: ['Mitú'],
+      },
+      {
+        name: 'Vichada',
+        subregions: ['Puerto Carreño'],
       },
     ],
   },
