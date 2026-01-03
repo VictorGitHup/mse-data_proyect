@@ -6,10 +6,9 @@ import { createSupabaseServerActionClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 
-const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB for videos
+const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
 const ACCEPTED_MEDIA_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp", "video/mp4", "video/quicktime", "video/mov"];
 
-// Base schema for a single file
 const fileSchema = z.instanceof(File).refine(file => file.size > 0, "El archivo no puede estar vacío.");
 
 const adSchema = z.object({
@@ -20,14 +19,17 @@ const adSchema = z.object({
   region_id: z.coerce.number().int().positive('Debes seleccionar una región.'),
   subregion_id: z.coerce.number().int().optional(),
   media: z.preprocess((arg) => {
-    // Ensure arg is an array, even if it's a single file
     if (arg === undefined || arg === null) return [];
     return Array.isArray(arg) ? arg : [arg];
   }, z.array(fileSchema))
     .min(1, 'Debes subir al menos una imagen o video.')
     .max(5, 'Puedes subir un máximo de 5 archivos.')
     .refine(files => files.every(file => file.size <= MAX_FILE_SIZE), `Cada archivo debe pesar menos de 50MB.`)
-    .refine(files => files.every(file => ACCEPTED_MEDIA_TYPES.includes(file.type)), "Solo se aceptan formatos de imagen (JPG, PNG, WEBP) y video (MP4, MOV)."),
+    .refine(files => files.every(file => ACCEPTED_MEDIA_TYPES.includes(file.type)), "Solo se aceptan formatos de imagen (JPG, PNG, WEBP) y video (MP4, MOV).")
+    .refine(files => {
+      const videoCount = files.filter(file => file.type.startsWith('video/')).length;
+      return videoCount <= 1;
+    }, 'Solo puedes subir un video por anuncio.'),
   cover_image_index: z.coerce.number().int().min(0).max(4),
 });
 
@@ -64,7 +66,6 @@ export async function createAd(formData: FormData) {
   const { media, cover_image_index, ...adData } = validatedFields.data;
 
   try {
-    // 1. Create the ad record to get an ID
     const slug = adData.title.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
     const adSlug = `${slug}-${Date.now().toString().slice(-6)}`;
 
@@ -85,10 +86,9 @@ export async function createAd(formData: FormData) {
     
     const adId = newAd.id;
 
-    // 2. Upload all media in parallel
-    const uploadPromises = media.map((file, index) => {
+    const uploadPromises = media.map((file) => {
       const fileExt = file.name.split('.').pop();
-      const filePath = `${user.id}/${adId}/${Date.now()}-${index}.${fileExt}`;
+      const filePath = `${user.id}/${adId}/${Date.now()}-${Math.random()}.${fileExt}`;
       return supabase.storage.from('ad_media').upload(filePath, file);
     });
 
@@ -123,14 +123,11 @@ export async function createAd(formData: FormData) {
         });
     }
 
-    // 3. Insert all media records into the ad_media table
     const { error: mediaInsertError } = await supabase.from('ad_media').insert(mediaToInsert);
 
     if (mediaInsertError) {
         console.error('Media insert error:', mediaInsertError);
-        // Attempt to clean up if media insert fails
         await supabase.from('ads').delete().eq('id', adId);
-        // Also cleanup storage
         const pathsToDelete = uploadResults.map(res => res.data?.path).filter(Boolean) as string[];
         if (pathsToDelete.length > 0) {
           await supabase.storage.from('ad_media').remove(pathsToDelete);

@@ -10,12 +10,13 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
-import type { Location, AdMedia } from '@/lib/types';
-import { AlertCircle, Star, X, ImagePlus, Library } from 'lucide-react';
+import type { Location, AdMedia, Category } from '@/lib/types';
+import { AlertCircle, Star, X, ImagePlus, Library, Video } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import MediaGallery from './MediaGallery';
+import { useToast } from '@/hooks/use-toast';
 
 type MediaFile = {
   file: File;
@@ -34,7 +35,8 @@ function SubmitButton() {
 
 export default function CreateAdForm() {
   const supabase = createSupabaseBrowserClient();
-  const [categories, setCategories] = useState<{ id: number; name: string }[]>([]);
+  const { toast } = useToast();
+  const [categories, setCategories] = useState<Category[]>([]);
   const [countries, setCountries] = useState<Location[]>([]);
   const [regions, setRegions] = useState<Location[]>([]);
   const [subregions, setSubregions] = useState<Location[]>([]);
@@ -45,8 +47,8 @@ export default function CreateAdForm() {
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const [selectedCountryId, setSelectedCountryId] = useState<number | null>(null);
-  const [selectedRegionId, setSelectedRegionId] = useState<number | null>(null);
+  const [selectedCountryId, setSelectedCountryId] = useState<string | null>(null);
+  const [selectedRegionId, setSelectedRegionId] = useState<string | null>(null);
   
   useEffect(() => {
     async function getInitialData() {
@@ -65,34 +67,32 @@ export default function CreateAdForm() {
   }, [supabase]);
 
   const handleCountryChange = async (countryId: string) => {
-    const id = parseInt(countryId, 10);
-    setSelectedCountryId(id);
+    setSelectedCountryId(countryId);
     setSelectedRegionId(null);
     setRegions([]);
     setSubregions([]);
     
-    if (id) {
-      const { data, error } = await supabase
+    if (countryId) {
+      const { data } = await supabase
         .from('locations')
         .select('*')
         .eq('type', 'region')
-        .eq('parent_id', id)
+        .eq('parent_id', countryId)
         .order('name', { ascending: true });
       if (data) setRegions(data);
     }
   };
 
   const handleRegionChange = async (regionId: string) => {
-    const id = parseInt(regionId, 10);
-    setSelectedRegionId(id);
+    setSelectedRegionId(regionId);
     setSubregions([]);
 
-    if (id) {
-      const { data, error } = await supabase
+    if (regionId) {
+      const { data } = await supabase
         .from('locations')
         .select('*')
         .eq('type', 'subregion')
-        .eq('parent_id', id)
+        .eq('parent_id', regionId)
         .order('name', { ascending: true });
       if (data) setSubregions(data);
     }
@@ -101,14 +101,33 @@ export default function CreateAdForm() {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       const filesArray = Array.from(e.target.files);
-      const newMedia = filesArray.map(file => ({
-        file: file,
-        preview: URL.createObjectURL(file),
-        type: file.type.startsWith('video') ? 'video' : 'image',
-      }));
+      const currentVideosCount = selectedMedia.filter(m => m.type === 'video').length;
+      let newVideosCount = 0;
+
+      const newMedia = filesArray.reduce((acc, file) => {
+        const isVideo = file.type.startsWith('video');
+        if (isVideo) {
+            if (currentVideosCount + newVideosCount >= 1) {
+                toast({ title: 'Límite de video alcanzado', description: 'Solo puedes subir un video por anuncio.', variant: 'destructive' });
+                return acc;
+            }
+            newVideosCount++;
+        }
+        
+        acc.push({
+            file: file,
+            preview: URL.createObjectURL(file),
+            type: isVideo ? 'video' : 'image',
+        });
+        return acc;
+      }, [] as MediaFile[]);
       
-      const combinedMedia = [...selectedMedia, ...newMedia].slice(0, 5);
-      setSelectedMedia(combinedMedia);
+      const combinedMedia = [...selectedMedia, ...newMedia];
+      if (combinedMedia.length > 5) {
+        toast({ title: 'Límite de archivos alcanzado', description: 'Puedes subir un máximo de 5 archivos.', variant: 'destructive' });
+      }
+
+      setSelectedMedia(combinedMedia.slice(0, 5));
     }
   };
 
@@ -123,20 +142,37 @@ export default function CreateAdForm() {
   };
   
   const handleSelectFromGallery = (galleryMedia: AdMedia[]) => {
-    const newMediaPromises = galleryMedia.map(async (media) => {
-        const response = await fetch(media.url);
-        const blob = await response.blob();
-        const file = new File([blob], `gallery-${media.id}`, { type: blob.type });
-        return {
-            file,
-            preview: media.url,
-            type: media.type,
-        };
-    });
+    const currentVideosCount = selectedMedia.filter(m => m.type === 'video').length;
+    let newVideosCount = 0;
+
+    const newMediaPromises = galleryMedia.reduce((acc, media) => {
+        const isVideo = media.type === 'video';
+        if (isVideo) {
+            if (currentVideosCount + newVideosCount >= 1) {
+                toast({ title: 'Límite de video alcanzado', description: 'Solo puedes subir un video por anuncio.', variant: 'destructive' });
+                return acc;
+            }
+            newVideosCount++;
+        }
+        acc.push(
+            fetch(media.url)
+                .then(response => response.blob())
+                .then(blob => new File([blob], `gallery-${media.id}`, { type: blob.type }))
+                .then(file => ({
+                    file,
+                    preview: media.url,
+                    type: media.type,
+                }))
+        );
+        return acc;
+    }, [] as Promise<MediaFile>[]);
 
     Promise.all(newMediaPromises).then(newMediaFiles => {
-        const combinedMedia = [...selectedMedia, ...newMediaFiles].slice(0, 5);
-        setSelectedMedia(combinedMedia);
+        const combinedMedia = [...selectedMedia, ...newMediaFiles];
+        if (combinedMedia.length > 5) {
+            toast({ title: 'Límite de archivos alcanzado', description: 'Puedes subir un máximo de 5 archivos.', variant: 'destructive' });
+        }
+        setSelectedMedia(combinedMedia.slice(0, 5));
     });
     setIsGalleryOpen(false);
   };
@@ -169,7 +205,7 @@ export default function CreateAdForm() {
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="media">Imágenes y Videos (hasta 5)</Label>
+          <Label htmlFor="media">Imágenes y Videos (hasta 5 archivos, 1 video máx.)</Label>
           <Input 
             id="media" 
             name="media-upload"
@@ -190,7 +226,9 @@ export default function CreateAdForm() {
               Usar de mi Galería
             </Button>
           </div>
-          <p className="text-xs text-muted-foreground">Sube hasta 5 archivos (imágenes o videos). La primera imagen será la de portada por defecto.</p>
+          <p className="text-xs text-muted-foreground">
+            Sube hasta 5 archivos. Máximo 1 video de 30 segundos. La primera imagen será la portada por defecto.
+          </p>
           
           {selectedMedia.length > 0 && (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2 mt-4">
@@ -212,6 +250,11 @@ export default function CreateAdForm() {
                       playsInline
                       className="object-cover rounded-md w-full h-full"
                     />
+                  )}
+                  {media.type === 'video' && (
+                    <div className="absolute top-1 right-1 bg-black/50 text-white p-1 rounded-full">
+                       <Video className="h-3 w-3" />
+                     </div>
                   )}
                   <div className="absolute inset-0 bg-black bg-opacity-30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
                      {media.type === 'image' && (
@@ -291,11 +334,11 @@ export default function CreateAdForm() {
           </div>
         </div>
 
-        {selectedCountryId && (
+        {selectedCountryId && regions.length > 0 && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
               <Label htmlFor="region_id">Región / Provincia</Label>
-              <Select name="region_id" onValueChange={handleRegionChange} required>
+              <Select name="region_id" onValueChange={handleRegionChange} required={regions.length > 0}>
                 <SelectTrigger id="region_id">
                   <SelectValue placeholder="Selecciona una región" />
                 </SelectTrigger>
@@ -341,4 +384,3 @@ export default function CreateAdForm() {
     </>
   );
 }
-
