@@ -30,7 +30,7 @@ export default function AdFilters({ initialCategories, initialCountries }: AdFil
 
   const updateSearchParam = (key: string, value: string) => {
     const params = new URLSearchParams(searchParams);
-    if (value) {
+    if (value && value !== 'all') {
       params.set(key, value);
     } else {
       params.delete(key);
@@ -97,7 +97,7 @@ export default function AdFilters({ initialCategories, initialCountries }: AdFil
             <SelectValue placeholder="Todas las categorías" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">Todas las categorías</SelectItem>
+            <SelectItem value="all">Todas las categorías</SelectItem>
             {initialCategories?.map(cat => (
               <SelectItem key={cat.id} value={String(cat.id)}>{cat.name}</SelectItem>
             ))}
@@ -110,7 +110,7 @@ export default function AdFilters({ initialCategories, initialCountries }: AdFil
             <SelectValue placeholder="Todos los países" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">Todos los países</SelectItem>
+            <SelectItem value="all">Todos los países</SelectItem>
             {initialCountries?.map(country => (
               <SelectItem key={country.id} value={String(country.id)}>{country.name}</SelectItem>
             ))}
@@ -127,7 +127,7 @@ export default function AdFilters({ initialCategories, initialCountries }: AdFil
             <SelectValue placeholder="Todas las regiones" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">Todas las regiones</SelectItem>
+            <SelectItem value="all">Todas las regiones</SelectItem>
             {regions.map(region => (
               <SelectItem key={region.id} value={String(region.id)}>{region.name}</SelectItem>
             ))}
@@ -144,7 +144,7 @@ export default function AdFilters({ initialCategories, initialCountries }: AdFil
             <SelectValue placeholder="Todas las ciudades" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">Todas las ciudades</SelectItem>
+            <SelectItem value="all">Todas las ciudades</SelectItem>
             {subregions.map(subregion => (
               <SelectItem key={subregion.id} value={String(subregion.id)}>{subregion.name}</SelectItem>
             ))}
