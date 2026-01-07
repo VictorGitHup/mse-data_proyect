@@ -104,3 +104,4 @@ export type AdForCard = Pick<Ad, 'id' | 'title' | 'slug' | 'tags' | 'boosted_unt
 export type AdCommentWithProfile = AdComment & {
     profiles: Pick<Profile, 'username' | 'avatar_url'>
 };
+

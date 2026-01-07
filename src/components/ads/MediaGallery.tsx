@@ -62,7 +62,7 @@ export default function MediaGallery({ isOpen, onOpenChange, onSelectMedia }: Me
     if (isOpen) {
       fetchMedia();
     }
-  }, [isOpen]);
+  }, [isOpen, toast]);
 
   const handleSelect = (item: AdMedia) => {
     setSelectedMedia(prev =>
