@@ -95,6 +95,8 @@ export async function addRating(adId: number, rating: number) {
     return { error: 'Debes iniciar sesión para calificar.' };
   }
 
+  // Use upsert to either insert a new rating or update an existing one.
+  // The 'onConflict' option specifies the columns that form the unique constraint.
   const { error } = await supabase
     .from('ad_ratings')
     .upsert({ ad_id: adId, user_id: user.id, rating: rating }, { onConflict: 'ad_id, user_id' });
