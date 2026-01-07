@@ -44,6 +44,31 @@ export default function AdView({ ad }: AdViewProps) {
 
   const hasContactInfo = advertiser.contact_email || fullWhatsappNumber || advertiser.contact_telegram || advertiser.contact_social_url;
 
+  const getStatusVariant = (status: AdWithRelations['status']) => {
+    switch (status) {
+      case 'active':
+        return 'default'; // Greenish in some themes
+      case 'inactive':
+        return 'secondary'; // Gray
+      case 'draft':
+        return 'outline'; // With border
+      case 'expired':
+        return 'destructive'; // Red
+      default:
+        return 'secondary';
+    }
+  };
+
+  const getStatusText = (status: AdWithRelations['status']) => {
+    const texts = {
+        active: 'Activo',
+        inactive: 'Inactivo',
+        draft: 'Borrador',
+        expired: 'Expirado',
+    };
+    return texts[status] || status;
+  }
+
   return (
     <div className="container mx-auto p-4 md:p-8">
       <div className="relative grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -72,8 +97,8 @@ export default function AdView({ ad }: AdViewProps) {
                     </div>
                   )}
                 </div>
-                <Badge variant={ad.status === 'active' ? 'default' : 'destructive'} className="capitalize">
-                  {ad.status}
+                <Badge variant={getStatusVariant(ad.status)} className="capitalize text-base">
+                  {getStatusText(ad.status)}
                 </Badge>
               </div>
             </CardHeader>

@@ -31,7 +31,6 @@ export default async function AdPage({ params }: { params: { slug: string } }) {
       )
     `)
     .eq("slug", params.slug)
-    .eq("status", "active")
     .single();
 
   if (error || !ad) {
