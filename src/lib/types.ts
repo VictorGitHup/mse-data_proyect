@@ -55,9 +55,27 @@ export type Category = {
     name: string;
 };
 
+export type AdRating = {
+    id: number;
+    ad_id: number;
+    user_id: string;
+    rating: number;
+    created_at: string;
+};
+
+export type AdComment = {
+    id: number;
+    ad_id: number;
+    user_id: string;
+    parent_comment_id: number | null;
+    comment: string;
+    status: 'pending' | 'approved' | 'rejected';
+    created_at: string;
+};
+
 // Type for joins, including related table data
 export type AdWithRelations = Ad & {
-  profiles: Pick<Profile, 'username' | 'avatar_url' | 'contact_email' | 'contact_whatsapp' | 'contact_telegram' | 'contact_social_url'> & {
+  profiles: Pick<Profile, 'id'| 'username' | 'avatar_url' | 'contact_email' | 'contact_whatsapp' | 'contact_telegram' | 'contact_social_url'> & {
     country: Pick<Location, 'name' | 'phone_code'> | null;
   };
   categories: Pick<Category, 'name'> | null;
@@ -81,3 +99,6 @@ export type AdForCard = Pick<Ad, 'id' | 'title' | 'slug' | 'tags'> & {
   country: { name: string } | null;
 };
 
+export type AdCommentWithProfile = AdComment & {
+    profiles: Pick<Profile, 'username' | 'avatar_url'>
+};

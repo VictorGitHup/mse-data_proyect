@@ -3,6 +3,8 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
 import AdView from "@/components/ads/AdView";
 import { getSimilarAds } from "@/lib/actions/ad-data.actions";
+import { getRatings, getComments } from "@/lib/actions/ratings-comments.actions";
+import type { AdCommentWithProfile } from "@/lib/types";
 
 export default async function AdPage({ params }: { params: { slug: string } }) {
   const supabase = await createSupabaseServerClient();
@@ -12,6 +14,7 @@ export default async function AdPage({ params }: { params: { slug: string } }) {
     .select(`
       *,
       profiles!inner (
+        id,
         username,
         avatar_url,
         contact_email,
@@ -39,14 +42,33 @@ export default async function AdPage({ params }: { params: { slug: string } }) {
     notFound();
   }
 
-  const similarAds = await getSimilarAds({
-    currentAdId: ad.id,
-    categoryId: ad.category_id,
-    regionId: ad.region_id,
-    tags: ad.tags,
-  });
+  // Fetch related data in parallel
+  const [similarAds, ratingData, commentsData] = await Promise.all([
+    getSimilarAds({
+      currentAdId: ad.id,
+      categoryId: ad.category_id,
+      regionId: ad.region_id,
+      tags: ad.tags,
+    }),
+    getRatings(ad.id),
+    getComments(ad.id)
+  ]);
+  
+  const { average: averageRating, count: ratingCount } = ratingData;
+  const initialComments = commentsData.data as AdCommentWithProfile[] || [];
+
+  const { data: { user } } = await supabase.auth.getUser();
 
   // The 'any' type cast is a temporary workaround because Supabase's generated types
   // for related tables can be complex. We ensure data integrity through the query itself.
-  return <AdView ad={ad as any} similarAds={similarAds} />;
+  return (
+      <AdView 
+        ad={ad as any} 
+        similarAds={similarAds}
+        initialAverageRating={averageRating}
+        initialRatingCount={ratingCount}
+        initialComments={initialComments}
+        currentUser={user}
+      />
+  );
 }

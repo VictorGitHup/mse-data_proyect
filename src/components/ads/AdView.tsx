@@ -2,6 +2,7 @@
 'use client';
 
 import Image from "next/image";
+import { useState } from "react";
 import { 
   Card, 
   CardContent, 
@@ -11,18 +12,39 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Mail, Phone, Send, Link as LinkIcon, User as UserIcon, MapPin, Video } from "lucide-react";
-import type { AdWithRelations, AdForCard } from "@/lib/types";
+import { Mail, Phone, Send, Link as LinkIcon, User as UserIcon, MapPin, Video, Star } from "lucide-react";
+import type { User } from "@supabase/supabase-js";
+import type { AdWithRelations, AdForCard, AdCommentWithProfile } from "@/lib/types";
 import AdCard from "./AdCard";
+import CommentSection from "./ratings/CommentSection";
 
 interface AdViewProps {
   ad: AdWithRelations;
   similarAds: AdForCard[];
+  initialAverageRating: number;
+  initialRatingCount: number;
+  initialComments: AdCommentWithProfile[];
+  currentUser: User | null;
 }
 
-export default function AdView({ ad, similarAds }: AdViewProps) {
+export default function AdView({ 
+  ad, 
+  similarAds,
+  initialAverageRating,
+  initialRatingCount,
+  initialComments,
+  currentUser,
+}: AdViewProps) {
   const advertiser = ad.profiles;
   const advertiserCountry = advertiser.country;
+  
+  const [averageRating, setAverageRating] = useState(initialAverageRating);
+  const [ratingCount, setRatingCount] = useState(initialRatingCount);
+
+  const handleNewRating = (newAverage: number, newCount: number) => {
+    setAverageRating(newAverage);
+    setRatingCount(newCount);
+  };
   
   const fullWhatsappNumber = (advertiserCountry?.phone_code && advertiser.contact_whatsapp)
     ? `${advertiserCountry.phone_code}${advertiser.contact_whatsapp}`.replace(/\D/g, '')
@@ -78,14 +100,23 @@ export default function AdView({ ad, similarAds }: AdViewProps) {
               <div className="flex justify-between items-start">
                 <div>
                   <Badge variant="secondary" className="mb-2">{ad.categories?.name || 'Categoría'}</Badge>
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
-                    <Avatar className="h-6 w-6">
-                      <AvatarImage src={advertiser.avatar_url || undefined} alt={advertiser.username} />
-                      <AvatarFallback>
-                        <UserIcon className="h-4 w-4" />
-                      </AvatarFallback>
-                    </Avatar>
-                    <span>{advertiser.username}</span>
+                  <div className="flex items-center gap-4">
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
+                        <Avatar className="h-6 w-6">
+                          <AvatarImage src={advertiser.avatar_url || undefined} alt={advertiser.username} />
+                          <AvatarFallback>
+                            <UserIcon className="h-4 w-4" />
+                          </AvatarFallback>
+                        </Avatar>
+                        <span>{advertiser.username}</span>
+                      </div>
+                      {ratingCount > 0 && (
+                        <div className="flex items-center gap-1 text-sm text-muted-foreground mb-2">
+                            <Star className="h-4 w-4 text-yellow-400 fill-yellow-400" />
+                            <span className="font-bold">{averageRating.toFixed(1)}</span>
+                            <span>({ratingCount})</span>
+                        </div>
+                      )}
                   </div>
                   <CardTitle className="text-3xl font-bold">{ad.title}</CardTitle>
                   {ad.tags && ad.tags.length > 0 && (
@@ -104,9 +135,11 @@ export default function AdView({ ad, similarAds }: AdViewProps) {
                     </div>
                   )}
                 </div>
-                <Badge variant={getStatusVariant(ad.status)} className="capitalize text-base">
-                  {getStatusText(ad.status)}
-                </Badge>
+                {currentUser?.id === ad.profiles?.id && (
+                  <Badge variant={getStatusVariant(ad.status)} className="capitalize text-base">
+                    {getStatusText(ad.status)}
+                  </Badge>
+                )}
               </div>
             </CardHeader>
             <CardContent>
@@ -172,6 +205,17 @@ export default function AdView({ ad, similarAds }: AdViewProps) {
                   </div>
                 </div>
               )}
+
+              {/* Ratings and Comments */}
+              <div className="pt-8 mt-8 border-t">
+                 <CommentSection
+                    adId={ad.id}
+                    adOwnerId={ad.user_id}
+                    currentUser={currentUser}
+                    initialComments={initialComments}
+                    onNewRating={handleNewRating}
+                  />
+              </div>
 
             </CardContent>
           </Card>
