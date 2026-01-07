@@ -12,6 +12,8 @@ import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import type { User } from "@supabase/supabase-js";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { User as UserIcon, Mail, Phone, Send, Link as LinkIcon } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
+import type { Location } from "@/lib/types";
 
 type Profile = {
   id: string;
@@ -20,6 +22,7 @@ type Profile = {
   updated_at: string;
   role: "USER" | "ADVERTISER";
   full_name: string | null;
+  country_id: number | null;
   contact_email: string | null;
   contact_whatsapp: string | null;
   contact_telegram: string | null;
@@ -37,10 +40,14 @@ export default function AccountForm({ user, profile }: AccountFormProps) {
   const { toast } = useToast();
 
   const [loading, setLoading] = useState(false);
+  const [countries, setCountries] = useState<Location[]>([]);
+
+  // Form fields
   const [username, setUsername] = useState("");
   const [fullName, setFullName] = useState("");
   const [avatarUrl, setAvatarUrl] = useState("");
   const [role, setRole] = useState<"USER" | "ADVERTISER">("USER");
+  const [countryId, setCountryId] = useState<string | undefined>(undefined);
 
   // Contact fields
   const [contactEmail, setContactEmail] = useState("");
@@ -54,12 +61,25 @@ export default function AccountForm({ user, profile }: AccountFormProps) {
       setFullName(profile.full_name || "");
       setAvatarUrl(profile.avatar_url || "");
       setRole(profile.role || "USER");
+      setCountryId(profile.country_id ? String(profile.country_id) : undefined);
       setContactEmail(profile.contact_email || "");
       setContactWhatsapp(profile.contact_whatsapp || "");
       setContactTelegram(profile.contact_telegram || "");
       setContactSocialUrl(profile.contact_social_url || "");
     }
   }, [profile]);
+
+  useEffect(() => {
+    async function getCountries() {
+      const { data } = await supabase
+        .from('locations')
+        .select('id, name, phone_code')
+        .eq('type', 'country')
+        .order('name');
+      if (data) setCountries(data);
+    }
+    getCountries();
+  }, [supabase]);
 
   async function updateProfile({ avatar_url }: { avatar_url?: string } = {}) {
     try {
@@ -68,6 +88,7 @@ export default function AccountForm({ user, profile }: AccountFormProps) {
         id: user.id,
         username,
         full_name: fullName,
+        country_id: countryId ? parseInt(countryId) : null,
         avatar_url: avatar_url ?? avatarUrl,
         contact_email: contactEmail,
         contact_whatsapp: contactWhatsapp,
@@ -135,6 +156,8 @@ export default function AccountForm({ user, profile }: AccountFormProps) {
     }
   }
 
+  const selectedCountryCode = countries.find(c => String(c.id) === countryId)?.phone_code;
+
   return (
     <div className="container mx-auto p-4 md:p-8">
       <Card className="max-w-3xl mx-auto">
@@ -199,9 +222,28 @@ export default function AccountForm({ user, profile }: AccountFormProps) {
                 />
               </div>
             </div>
-            <div className="space-y-2">
-              <Label>Tu Rol</Label>
-              <Input type="text" value={role === 'ADVERTISER' ? 'Anunciante' : 'Usuario'} disabled />
+             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                    <Label>Tu Rol</Label>
+                    <Input type="text" value={role === 'ADVERTISER' ? 'Anunciante' : 'Usuario'} disabled />
+                </div>
+                {role === 'ADVERTISER' && (
+                    <div className="space-y-2">
+                        <Label htmlFor="countryId">País de Residencia</Label>
+                        <Select value={countryId} onValueChange={setCountryId} disabled={loading}>
+                            <SelectTrigger id="countryId">
+                                <SelectValue placeholder="Selecciona tu país" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {countries.map((country) => (
+                                    <SelectItem key={country.id} value={String(country.id)}>
+                                        {country.name}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                )}
             </div>
           </div>
           
@@ -227,20 +269,27 @@ export default function AccountForm({ user, profile }: AccountFormProps) {
                     />
                   </div>
                 </div>
-                <div className="space-y-2">
+                 <div className="space-y-2">
                   <Label htmlFor="contactWhatsapp">Número de WhatsApp</Label>
-                   <div className="relative">
-                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                   <div className="flex items-center">
+                    {selectedCountryCode && (
+                        <div className="h-10 flex items-center justify-center px-3 border border-r-0 rounded-l-md bg-muted text-muted-foreground text-sm">
+                            +{selectedCountryCode}
+                        </div>
+                    )}
                     <Input
                       id="contactWhatsapp"
-                      type="text"
-                      placeholder="+1234567890"
+                      type="tel"
+                      placeholder="612 345 678"
                       value={contactWhatsapp}
                       onChange={(e) => setContactWhatsapp(e.target.value)}
                       disabled={loading}
-                      className="pl-10"
+                      className={selectedCountryCode ? "rounded-l-none" : ""}
                     />
                   </div>
+                   {!countryId && (
+                     <p className="text-xs text-muted-foreground">Selecciona tu país de residencia para añadir el prefijo.</p>
+                   )}
                 </div>
               </div>
 

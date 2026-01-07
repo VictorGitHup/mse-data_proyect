@@ -31,6 +31,7 @@ export type Profile = {
   avatar_url: string | null;
   role: "USER" | "ADVERTISER";
   full_name: string | null;
+  country_id: number | null;
   contact_email: string | null;
   contact_whatsapp: string | null;
   contact_telegram: string | null;
@@ -43,6 +44,7 @@ export type Location = {
     type: 'country' | 'region' | 'subregion';
     parent_id: number | null;
     code: string | null;
+    phone_code: string | null;
 };
 
 export type Category = {
@@ -52,7 +54,9 @@ export type Category = {
 
 // Type for joins, including related table data
 export type AdWithRelations = Ad & {
-  profiles: Pick<Profile, 'username' | 'avatar_url' | 'contact_email' | 'contact_whatsapp' | 'contact_telegram' | 'contact_social_url'>;
+  profiles: Pick<Profile, 'username' | 'avatar_url' | 'contact_email' | 'contact_whatsapp' | 'contact_telegram' | 'contact_social_url'> & {
+    country: Pick<Location, 'name' | 'phone_code'> | null;
+  };
   categories: Pick<Category, 'name'> | null;
   country: Pick<Location, 'name'> | null;
   region: Pick<Location, 'name'> | null;

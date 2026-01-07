@@ -21,6 +21,12 @@ interface AdViewProps {
 
 export default function AdView({ ad }: AdViewProps) {
   const advertiser = ad.profiles;
+  const advertiserCountry = advertiser.country;
+  
+  // Construct the full WhatsApp number
+  const fullWhatsappNumber = (advertiserCountry?.phone_code && advertiser.contact_whatsapp)
+    ? `${advertiserCountry.phone_code}${advertiser.contact_whatsapp}`.replace(/\D/g, '')
+    : null;
 
   const locationParts = [
     ad.subregion?.name,
@@ -36,7 +42,7 @@ export default function AdView({ ad }: AdViewProps) {
     return 0;
   }) || [];
 
-  const hasContactInfo = advertiser.contact_email || advertiser.contact_whatsapp || advertiser.contact_telegram || advertiser.contact_social_url;
+  const hasContactInfo = advertiser.contact_email || fullWhatsappNumber || advertiser.contact_telegram || advertiser.contact_social_url;
 
   return (
     <div className="container mx-auto p-4 md:p-8">
@@ -134,9 +140,9 @@ export default function AdView({ ad }: AdViewProps) {
                     </a>
                   </Button>
                 )}
-                {advertiser.contact_whatsapp && (
+                {fullWhatsappNumber && (
                   <Button asChild className="w-full bg-green-500 hover:bg-green-600 text-white">
-                    <a href={`https://wa.me/${advertiser.contact_whatsapp.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer">
+                    <a href={`https://wa.me/${fullWhatsappNumber}`} target="_blank" rel="noopener noreferrer">
                       <Phone className="mr-2" /> WhatsApp
                     </a>
                   </Button>
@@ -175,9 +181,9 @@ export default function AdView({ ad }: AdViewProps) {
                   </a>
                 </Button>
               )}
-              {advertiser.contact_whatsapp && (
+              {fullWhatsappNumber && (
                 <Button asChild size="icon" className="bg-green-500 hover:bg-green-600 text-white">
-                  <a href={`https://wa.me/${advertiser.contact_whatsapp.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer" aria-label="WhatsApp">
+                  <a href={`https://wa.me/${fullWhatsappNumber}`} target="_blank" rel="noopener noreferrer" aria-label="WhatsApp">
                     <Phone />
                   </a>
                 </Button>

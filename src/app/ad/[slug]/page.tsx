@@ -10,13 +10,14 @@ export default async function AdPage({ params }: { params: { slug: string } }) {
     .from("ads")
     .select(`
       *,
-      profiles (
+      profiles!inner (
         username,
         avatar_url,
         contact_email,
         contact_whatsapp,
         contact_telegram,
-        contact_social_url
+        contact_social_url,
+        country:country_id ( name, phone_code )
       ),
       categories (name),
       country:country_id (name),
