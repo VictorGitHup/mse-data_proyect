@@ -25,7 +25,8 @@ export default async function AdPage({ params }: { params: { slug: string } }) {
       ad_media (
         id,
         url,
-        is_cover
+        is_cover,
+        type
       )
     `)
     .eq("slug", params.slug)

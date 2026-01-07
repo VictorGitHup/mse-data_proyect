@@ -31,7 +31,11 @@ export default function AdView({ ad }: AdViewProps) {
   
   const locationString = locationParts.join(', ');
 
-  const sortedMedia = ad.ad_media?.sort((a, b) => (a.is_cover ? -1 : 1)) || [];
+  const sortedMedia = ad.ad_media?.sort((a, b) => {
+    if (a.is_cover) return -1;
+    if (b.is_cover) return 1;
+    return 0;
+  }) || [];
 
   return (
     <div className="container mx-auto p-4 md:p-8">
@@ -59,7 +63,7 @@ export default function AdView({ ad }: AdViewProps) {
             </CardHeader>
             <CardContent>
               {sortedMedia.length > 0 && (
-                <Carousel className="w-full mb-6">
+                <Carousel className="w-full mb-6" opts={{ loop: true }}>
                   <CarouselContent>
                     {sortedMedia.map((media) => (
                       <CarouselItem key={media.id}>
@@ -71,12 +75,13 @@ export default function AdView({ ad }: AdViewProps) {
                                 fill
                                 style={{ objectFit: 'contain' }}
                                 className="bg-muted"
+                                priority={media.is_cover}
                               />
                            ) : (
                               <video
                                 src={media.url}
                                 controls
-                                className="w-full h-full object-contain"
+                                className="w-full h-full object-contain bg-black"
                               >
                                 Tu navegador no soporta el tag de video.
                               </video>
@@ -85,11 +90,15 @@ export default function AdView({ ad }: AdViewProps) {
                       </CarouselItem>
                     ))}
                   </CarouselContent>
-                  <CarouselPrevious className="left-4" />
-                  <CarouselNext className="right-4" />
+                  {sortedMedia.length > 1 && (
+                    <>
+                      <CarouselPrevious className="left-4" />
+                      <CarouselNext className="right-4" />
+                    </>
+                  )}
                 </Carousel>
               )}
-              <div className="prose prose-lg max-w-none text-foreground">
+              <div className="prose prose-lg max-w-none text-foreground whitespace-pre-wrap">
                 <p>{ad.description}</p>
               </div>
             </CardContent>
