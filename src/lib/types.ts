@@ -1,4 +1,5 @@
 
+
 export type Ad = {
   id: number;
   user_id: string;
@@ -46,6 +47,7 @@ export type Location = {
     parent_id: number | null;
     code: string | null;
     phone_code: string | null;
+    slug: string | null;
 };
 
 export type Category = {
@@ -78,3 +80,4 @@ export type AdForCard = Pick<Ad, 'id' | 'title' | 'slug' | 'tags'> & {
   category: { name: string } | null;
   country: { name: string } | null;
 };
+
