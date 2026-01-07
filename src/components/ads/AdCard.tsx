@@ -6,7 +6,7 @@ import Link from "next/link";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import type { AdForCard } from "@/lib/types";
-import { MapPin } from "lucide-react";
+import { MapPin, Star } from "lucide-react";
 
 interface AdCardProps {
   ad: AdForCard;
@@ -28,6 +28,12 @@ export default function AdCard({ ad }: AdCardProps) {
               sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
               className="object-cover transition-transform duration-300 group-hover:scale-110"
             />
+            {ad.rating_count && ad.rating_count > 0 && (
+              <div className="absolute top-2 right-2 flex items-center gap-1 rounded-full bg-black/50 px-2 py-1 text-xs font-bold text-white">
+                <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+                <span>{ad.avg_rating?.toFixed(1)}</span>
+              </div>
+            )}
           </div>
         </CardHeader>
         <CardContent className="p-4 space-y-2">

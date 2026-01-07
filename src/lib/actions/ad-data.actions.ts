@@ -54,12 +54,14 @@ export async function getSimilarAds({
 
   // Base query
   let query = supabase
-    .from("ads")
+    .from("ads_with_ratings") // Use the new view
     .select(`
       id,
       title,
       slug,
       tags,
+      avg_rating,
+      rating_count,
       ad_media!inner(url, is_cover),
       category:categories(name),
       country:country_id(name)
@@ -95,12 +97,14 @@ export async function getSimilarAds({
   // If not enough results, fall back to just category
   if (data.length < 4) {
     const fallbackQuery = supabase
-      .from("ads")
+      .from("ads_with_ratings") // Use the new view
       .select(`
         id,
         title,
         slug,
         tags,
+        avg_rating,
+        rating_count,
         ad_media!inner(url, is_cover),
         category:categories(name),
         country:country_id(name)

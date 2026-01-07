@@ -97,6 +97,8 @@ export type AdForCard = Pick<Ad, 'id' | 'title' | 'slug' | 'tags'> & {
   ad_media: { url: string }[];
   category: { name: string } | null;
   country: { name: string } | null;
+  avg_rating?: number;
+  rating_count?: number;
 };
 
 export type AdCommentWithProfile = AdComment & {

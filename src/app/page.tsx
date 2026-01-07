@@ -69,12 +69,14 @@ export default async function Home({ searchParams }: HomePageProps) {
 
   // --- Ad Query Construction ---
   let query = supabase
-    .from("ads")
+    .from("ads_with_ratings") // Use the new view here
     .select(`
       id,
       title,
       slug,
       tags,
+      avg_rating,
+      rating_count,
       ad_media!inner(url, is_cover),
       category:categories(name),
       country:country_id(name)

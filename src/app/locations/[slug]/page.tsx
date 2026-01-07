@@ -38,12 +38,14 @@ export default async function LocationPage({ params, searchParams }: LocationPag
 
   // 3. Construct the ad query
   let query = supabase
-    .from("ads")
+    .from("ads_with_ratings") // Use the new view
     .select(`
       id,
       title,
       slug,
       tags,
+      avg_rating,
+      rating_count,
       ad_media!inner(url, is_cover),
       category:categories(name),
       country:country_id(name)
