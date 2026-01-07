@@ -72,7 +72,8 @@ export async function updateAd(adId: number, formData: FormData) {
           if (!file) return Promise.resolve(null);
           const fileExt = file.name.split('.').pop();
           const filePath = `${user.id}/${adId}/${Date.now()}-${Math.random()}.${fileExt}`;
-          return supabase.storage.from('ad_media').upload(filePath, file).then(res => ({ ...res, originalPreview: URL.createObjectURL(file) }));
+          const originalPreview = file instanceof File ? URL.createObjectURL(file) : '';
+          return supabase.storage.from('ad_media').upload(filePath, file).then(res => ({ ...res, originalPreview }));
         });
 
         const uploadResults = await Promise.all(uploadPromises);
@@ -80,7 +81,7 @@ export async function updateAd(adId: number, formData: FormData) {
         for (const result of uploadResults) {
             if (!result || result.error) throw new Error('Error al subir nuevos archivos.');
             const { data: { publicUrl } } = supabase.storage.from('ad_media').getPublicUrl(result.data.path);
-            const file = new_media.find(f => f && URL.createObjectURL(f) === result.originalPreview);
+            const file = new_media.find(f => f && f instanceof File && URL.createObjectURL(f) === result.originalPreview);
             uploadedMedia.push({ url: publicUrl, type: file?.type.startsWith('video') ? 'video' : 'image', filePreview: result.originalPreview });
         }
     }
@@ -120,6 +121,19 @@ export async function updateAd(adId: number, formData: FormData) {
   } catch (error: any) {
     console.error('Error updating ad:', error);
     return redirect(`${errorRedirectUrl}?error=${encodeURIComponent(error.message)}`);
+  }
+
+  // Fetch the ad slug before revalidating the public path
+  const { data: ad, error: slugError } = await supabase
+    .from('ads')
+    .select('slug')
+    .eq('id', adId)
+    .single();
+
+  if (slugError || !ad) {
+    console.error('Could not fetch ad slug for revalidation:', slugError);
+    // Redirect to dashboard even if revalidation fails for the public page
+    redirect('/dashboard');
   }
 
   revalidatePath('/dashboard');
