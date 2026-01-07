@@ -3,6 +3,7 @@
 
 import Image from "next/image";
 import { useState } from "react";
+import Link from "next/link";
 import { 
   Card, 
   CardContent, 
@@ -114,7 +115,7 @@ export default function AdView({
                         )}
                     </div>
                   <div className="flex items-center gap-4">
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
+                      <Link href={`/perfil/${advertiser.username}`} className="flex items-center gap-2 text-sm text-muted-foreground mb-2 hover:underline">
                         <Avatar className="h-6 w-6">
                           <AvatarImage src={advertiser.avatar_url || undefined} alt={advertiser.username} />
                           <AvatarFallback>
@@ -122,7 +123,7 @@ export default function AdView({
                           </AvatarFallback>
                         </Avatar>
                         <span>{advertiser.username}</span>
-                      </div>
+                      </Link>
                       {ratingCount > 0 && (
                         <div className="flex items-center gap-1 text-sm text-muted-foreground mb-2">
                             <Star className="h-4 w-4 text-yellow-400 fill-yellow-400" />
