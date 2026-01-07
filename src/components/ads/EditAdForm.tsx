@@ -56,7 +56,7 @@ export default function EditAdForm({ ad }: EditAdFormProps) {
   const [coverImage, setCoverImage] = useState<{ type: 'existing' | 'new'; value: number | string } | null>(null);
 
   useEffect(() => {
-    const cover = (ad.ad_media || []).find(m => m.is_cover);
+    const cover = (ad.ad_media || []).find(m => m.is_cover && m.type === 'image');
     if (cover) {
       setCoverImage({ type: 'existing', value: cover.id });
     }
@@ -176,7 +176,7 @@ export default function EditAdForm({ ad }: EditAdFormProps) {
             id="media" 
             name="media-upload"
             type="file"
-            accept="image/png, image/jpeg, image/webp, video/mp4, video/quicktime"
+            accept="image/png, image/jpeg, image/webp, video/mp4, video/quicktime, video/mov"
             multiple
             onChange={handleFileChange}
             ref={fileInputRef}

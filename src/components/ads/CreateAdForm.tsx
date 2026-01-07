@@ -213,7 +213,7 @@ export default function CreateAdForm() {
             id="media" 
             name="media-upload"
             type="file"
-            accept="image/png, image/jpeg, image/webp, video/mp4, video/quicktime"
+            accept="image/png, image/jpeg, image/webp, video/mp4, video/quicktime, video/mov"
             multiple
             onChange={handleFileChange}
             ref={fileInputRef}

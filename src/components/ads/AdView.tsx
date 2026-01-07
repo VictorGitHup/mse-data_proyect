@@ -11,7 +11,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Mail, Phone, Send, Link as LinkIcon, User as UserIcon, MapPin } from "lucide-react";
+import { Mail, Phone, Send, Link as LinkIcon, User as UserIcon, MapPin, Video } from "lucide-react";
 import type { AdWithRelations } from "@/lib/types";
 
 interface AdViewProps {
@@ -35,7 +35,7 @@ export default function AdView({ ad }: AdViewProps) {
   const locationString = locationParts.join(', ');
 
   const allMedia = ad.ad_media || [];
-  const coverMedia = allMedia.find(m => m.is_cover && m.type === 'image') || allMedia.find(m => m.type === 'image') || null;
+  const coverMedia = allMedia.find(m => m.is_cover) || allMedia[0] || null;
   const otherMedia = allMedia.filter(m => m.id !== coverMedia?.id);
 
   const hasContactInfo = advertiser.contact_email || fullWhatsappNumber || advertiser.contact_telegram || advertiser.contact_social_url;
@@ -111,14 +111,24 @@ export default function AdView({ ad }: AdViewProps) {
               {/* Cover Media */}
               {coverMedia ? (
                 <div className="relative w-full aspect-square lg:aspect-video rounded-lg overflow-hidden bg-muted mb-6">
-                  <Image
-                    src={coverMedia.url}
-                    alt={ad.title}
-                    fill
-                    style={{ objectFit: 'contain' }}
-                    className="bg-muted"
-                    priority
-                  />
+                  {coverMedia.type === 'image' ? (
+                    <Image
+                      src={coverMedia.url}
+                      alt={ad.title}
+                      fill
+                      style={{ objectFit: 'contain' }}
+                      className="bg-muted"
+                      priority
+                    />
+                  ) : (
+                     <video
+                        src={coverMedia.url}
+                        controls
+                        className="w-full h-full object-contain bg-black"
+                      >
+                        Tu navegador no soporta el tag de video.
+                      </video>
+                  )}
                 </div>
               ) : (
                 <div className="w-full aspect-square lg:aspect-video rounded-lg bg-muted flex items-center justify-center text-muted-foreground mb-6">

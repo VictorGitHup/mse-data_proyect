@@ -18,7 +18,7 @@ const adUpdateSchema = z.object({
   tags: z.string().transform(val => val ? JSON.parse(val) : []).pipe(z.string().array().optional()),
   new_media: z.preprocess((arg) => (Array.isArray(arg) ? arg : [arg].filter(Boolean)), z.array(fileSchema).optional()),
   media_to_delete: z.string().transform(val => JSON.parse(val)),
-  cover_image: z.string().transform(val => JSON.parse(val)).optional(),
+  cover_image: z.string().transform(val => JSON.parse(val)).nullable(),
 });
 
 export async function updateAd(adId: number, formData: FormData) {
@@ -104,17 +104,29 @@ export async function updateAd(adId: number, formData: FormData) {
     }
     
     // 5. Update cover image status
+    // First, set all media for this ad to be not the cover.
+    await supabase.from('ad_media').update({ is_cover: false }).eq('ad_id', adId);
+    
     if (cover_image) {
-      await supabase.from('ad_media').update({ is_cover: false }).eq('ad_id', adId);
-      if (cover_image.type === 'existing') {
-        await supabase.from('ad_media').update({ is_cover: true }).eq('id', cover_image.value);
-      } else {
-        const newCoverMedia = uploadedMedia.find(m => m.filePreview === cover_image.value);
-        if (newCoverMedia) {
-          await supabase.from('ad_media').update({ is_cover: true }).eq('url', newCoverMedia.url);
+        if (cover_image.type === 'existing') {
+            await supabase.from('ad_media').update({ is_cover: true }).eq('id', cover_image.value);
+        } else { // type 'new'
+            const newCoverMedia = uploadedMedia.find(m => m.filePreview === cover_image.value);
+            if (newCoverMedia) {
+                await supabase.from('ad_media').update({ is_cover: true }).eq('url', newCoverMedia.url);
+            }
         }
-      }
+    } else {
+        // If no cover is explicitly set (e.g., previous cover was deleted), set the first available image as cover.
+        const { data: allAdMedia, error: mediaError } = await supabase.from('ad_media').select('id, type').eq('ad_id', adId).order('created_at');
+        if (mediaError) throw new Error("Could not fetch media to set default cover.");
+        
+        const firstImage = allAdMedia.find(m => m.type === 'image');
+        if (firstImage) {
+            await supabase.from('ad_media').update({ is_cover: true }).eq('id', firstImage.id);
+        }
     }
+
 
   } catch (error: any) {
     console.error('Error updating ad:', error);

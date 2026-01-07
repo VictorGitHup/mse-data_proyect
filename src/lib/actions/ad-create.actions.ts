@@ -120,6 +120,8 @@ export async function createAd(formData: FormData) {
 
         const file = media[i];
         const mediaType = file.type.startsWith('video') ? 'video' : 'image';
+        
+        // For video, cover is false. For image, it's based on index.
         const isCover = mediaType === 'image' && i === cover_image_index;
 
         mediaToInsert.push({
@@ -129,6 +131,15 @@ export async function createAd(formData: FormData) {
             type: mediaType,
             is_cover: isCover,
         });
+    }
+
+    // if no image was selected as cover, mark the first image (if any) as cover
+    const hasCoverImage = mediaToInsert.some(m => m.is_cover);
+    if (!hasCoverImage) {
+        const firstImageIndex = mediaToInsert.findIndex(m => m.type === 'image');
+        if (firstImageIndex !== -1) {
+            mediaToInsert[firstImageIndex].is_cover = true;
+        }
     }
 
     const { error: mediaInsertError } = await supabase.from('ad_media').insert(mediaToInsert);
