@@ -1,251 +1,263 @@
--- Crear ENUM para roles de usuario
-create type public.user_role as enum ('USER', 'ADVERTISER');
+-- ### TIPOS ###
+DROP TYPE IF EXISTS public.user_role;
+CREATE TYPE public.user_role AS ENUM ('USER', 'ADVERTISER');
 
--- Crear ENUM para estados de anuncios
-create type public.ad_status as enum ('active', 'inactive', 'draft', 'expired');
+DROP TYPE IF EXISTS public.ad_status;
+CREATE TYPE public.ad_status AS ENUM ('active', 'inactive', 'draft', 'expired');
 
--- Crear ENUM para estados de comentarios
-create type public.comment_status as enum ('pending', 'approved', 'rejected');
+-- ### TABLAS ###
 
--- 1. Tabla de Perfiles de Usuario
-create table public.profiles (
-  id uuid not null references auth.users on delete cascade,
-  username text not null unique,
-  avatar_url text,
-  role user_role not null default 'USER',
+-- Tabla de Perfiles
+CREATE TABLE IF NOT EXISTS public.profiles (
+  id uuid NOT NULL PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+  username text UNIQUE,
   full_name text,
+  avatar_url text,
+  role user_role NOT NULL DEFAULT 'USER',
+  updated_at timestamptz,
   country_id int,
   contact_email text,
   contact_whatsapp text,
   contact_telegram text,
   contact_social_url text,
-  updated_at timestamptz,
-  primary key (id),
-  constraint username_length check (char_length(username) >= 3)
-);
-alter table public.profiles enable row level security;
 
--- 2. Tabla de Categorías
-create table public.categories (
-  id serial primary key,
-  name text not null unique
+  CONSTRAINT username_length CHECK (char_length(username) >= 3)
 );
-alter table public.categories enable row level security;
+COMMENT ON TABLE public.profiles IS 'Stores public profile information for each user.';
 
--- 3. Tabla de Ubicaciones (jerárquica)
-create table public.locations (
-  id serial primary key,
-  name text not null,
-  type text not null, -- 'country', 'region', 'subregion'
-  parent_id integer references public.locations(id),
-  code text, -- e.g., country code 'CO', 'ES'
-  phone_code text -- e.g., '57', '34'
+-- Tabla de Categorías
+CREATE TABLE IF NOT EXISTS public.categories (
+  id SERIAL PRIMARY KEY,
+  name text NOT NULL UNIQUE
 );
-create index on public.locations (parent_id);
-alter table public.locations enable row level security;
+COMMENT ON TABLE public.categories IS 'Stores ad categories.';
 
--- 4. Tabla de Anuncios (Ads)
-create table public.ads (
-  id bigserial primary key,
-  user_id uuid not null references public.profiles(id) on delete cascade,
-  title text not null,
-  description text not null,
-  category_id int not null references public.categories(id),
-  country_id int references public.locations(id),
-  region_id int references public.locations(id),
-  subregion_id int references public.locations(id),
-  status ad_status not null default 'draft',
-  created_at timestamptz not null default now(),
+-- Tabla de Ubicaciones
+CREATE TABLE IF NOT EXISTS public.locations (
+    id SERIAL PRIMARY KEY,
+    name text NOT NULL,
+    type text NOT NULL, -- 'country', 'region', 'subregion'
+    parent_id INTEGER REFERENCES public.locations(id),
+    code VARCHAR(10),
+    phone_code VARCHAR(10)
+);
+COMMENT ON TABLE public.locations IS 'Stores hierarchical location data.';
+
+-- Tabla de Anuncios
+CREATE TABLE IF NOT EXISTS public.ads (
+  id BIGSERIAL PRIMARY KEY,
+  user_id uuid NOT NULL REFERENCES public.profiles(id),
+  title text NOT NULL,
+  description text NOT NULL,
+  category_id INT NOT NULL REFERENCES public.categories(id),
+  country_id INT REFERENCES public.locations(id),
+  region_id INT REFERENCES public.locations(id),
+  subregion_id INT REFERENCES public.locations(id),
+  status ad_status NOT NULL DEFAULT 'draft',
+  created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz,
   boosted_until timestamptz,
-  slug text not null unique
+  slug text NOT NULL UNIQUE
 );
-alter table public.ads enable row level security;
-create index on public.ads (user_id);
-create index on public.ads (category_id);
-create index on public.ads (country_id);
+COMMENT ON TABLE public.ads IS 'Stores classified ads.';
 
--- 5. Tabla de Media de Anuncios (Imágenes/Videos)
-create table public.ad_media (
-  id bigserial primary key,
-  ad_id bigint not null references public.ads(id) on delete cascade,
-  user_id uuid not null references public.profiles(id) on delete cascade,
-  url text not null,
-  type text not null, -- 'image' or 'video'
-  is_cover boolean not null default false,
-  created_at timestamptz not null default now()
+-- Tabla de Multimedia de Anuncios
+CREATE TABLE IF NOT EXISTS public.ad_media (
+  id BIGSERIAL PRIMARY KEY,
+  ad_id BIGINT NOT NULL REFERENCES public.ads(id) ON DELETE CASCADE,
+  user_id uuid NOT NULL REFERENCES public.profiles(id),
+  url text NOT NULL,
+  type TEXT NOT NULL, -- 'image' or 'video'
+  is_cover BOOLEAN NOT NULL DEFAULT FALSE,
+  created_at timestamptz NOT NULL DEFAULT now()
 );
-alter table public.ad_media enable row level security;
-create index on public.ad_media (ad_id);
-create index on public.ad_media (user_id);
+COMMENT ON TABLE public.ad_media IS 'Stores media files (images/videos) for ads.';
 
--- 6. Tabla de Calificaciones (Ratings)
-create table public.ratings (
-  id bigserial primary key,
-  ad_id bigint not null references public.ads(id) on delete cascade,
-  user_id uuid not null references public.profiles(id) on delete cascade,
-  rating smallint not null check (rating >= 1 and rating <= 5),
-  created_at timestamptz not null default now(),
-  unique (ad_id, user_id) -- Un usuario solo puede calificar un anuncio una vez
-);
-alter table public.ratings enable row level security;
+-- ### FUNCIONES Y TRIGGERS ###
 
--- 7. Tabla de Comentarios
-create table public.comments (
-  id bigserial primary key,
-  ad_id bigint not null references public.ads(id) on delete cascade,
-  user_id uuid not null references public.profiles(id) on delete cascade,
-  comment text not null,
-  status comment_status not null default 'pending',
-  created_at timestamptz not null default now()
-);
-alter table public.comments enable row level security;
-
--- 8. Tabla de Transacciones (para 'boosts')
-create table public.boost_transactions (
-  id bigserial primary key,
-  ad_id bigint not null references public.ads(id) on delete cascade,
-  user_id uuid not null references public.profiles(id) on delete cascade,
-  amount decimal(10, 2) not null,
-  duration_days int not null,
-  payment_provider text,
-  transaction_id text,
-  status text, -- 'completed', 'failed'
-  created_at timestamptz not null default now()
-);
-alter table public.boost_transactions enable row level security;
-
-
--- Función para crear un perfil cuando se registra un nuevo usuario
-create or replace function public.handle_new_user()
-returns trigger
-language plpgsql
-security definer set search_path = public
-as $$
-begin
-  insert into public.profiles (id, full_name, username, role)
-  values (
+-- Función para manejar la creación de un nuevo usuario
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+BEGIN
+  INSERT INTO public.profiles (id, full_name, username, role)
+  VALUES (
     new.id,
     new.raw_user_meta_data->>'full_name',
     new.raw_user_meta_data->>'username',
     (new.raw_user_meta_data->>'role')::user_role
   );
-  return new;
-end;
+  RETURN new;
+END;
 $$;
 
--- Trigger que ejecuta la función después de la inserción en auth.users
-create trigger on_auth_user_created
-  after insert on auth.users
-  for each row execute procedure public.handle_new_user();
+-- Trigger que se dispara después de que un usuario se registra
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+CREATE TRIGGER on_auth_user_created
+  AFTER INSERT ON auth.users
+  FOR EACH ROW EXECUTE PROCEDURE public.handle_new_user();
 
 
--- Almacenamiento (Storage)
--- Bucket para avatares de usuario
-insert into storage.buckets (id, name, public)
-values ('avatars', 'avatars', true);
+-- ### ALMACENAMIENTO (STORAGE) ###
+
+-- Bucket para avatares de perfil
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('avatars', 'avatars', true)
+ON CONFLICT (id) DO NOTHING;
 
 -- Bucket para imágenes y videos de anuncios
-insert into storage.buckets (id, name, public)
-values ('ad_media', 'ad_media', true);
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('ad_media', 'ad_media', true)
+ON CONFLICT (id) DO NOTHING;
 
 
--- Políticas de Seguridad a Nivel de Fila (RLS)
+-- ### POLÍTICAS DE SEGURIDAD (RLS) ###
 
--- 1. Profiles
-create policy "Public profiles are viewable by everyone." on public.profiles for select using (true);
-create policy "Users can insert their own profile." on public.profiles for insert with check (auth.uid() = id);
-create policy "Users can update their own profile." on public.profiles for update using (auth.uid() = id);
+-- Activar RLS para las tablas
+ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.ads ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.ad_media ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.categories ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.locations ENABLE ROW LEVEL SECURITY;
 
--- 2. Categories
-create policy "Categories are viewable by everyone." on public.categories for select using (true);
+-- --- Políticas para `profiles` ---
+DROP POLICY IF EXISTS "Profiles are viewable by everyone." ON public.profiles;
+CREATE POLICY "Profiles are viewable by everyone." ON public.profiles
+  FOR SELECT USING (true);
 
--- 3. Locations
-create policy "Locations are viewable by everyone." on public.locations for select using (true);
+DROP POLICY IF EXISTS "Users can insert their own profile." ON public.profiles;
+CREATE POLICY "Users can insert their own profile." ON public.profiles
+  FOR INSERT WITH CHECK ((auth.uid() = id));
 
--- 4. Ads
-create policy "Active ads are viewable by everyone." on public.ads for select using (status = 'active');
-create policy "Advertisers can view their own ads." on public.ads for select using (auth.uid() = user_id);
-create policy "Advertisers can insert their own ads." on public.ads for insert with check (auth.uid() = user_id);
-create policy "Advertisers can update their own ads." on public.ads for update using (auth.uid() = user_id);
-create policy "Advertisers can delete their own ads." on public.ads for delete using (auth.uid() = user_id);
+DROP POLICY IF EXISTS "Users can update their own profile." ON public.profiles;
+CREATE POLICY "Users can update their own profile." ON public.profiles
+  FOR UPDATE USING ((auth.uid() = id));
 
--- 5. Ad Media
-create policy "Ad media is viewable by everyone." on public.ad_media for select using (true);
-create policy "Users can insert their own ad media." on public.ad_media for insert with check (auth.uid() = user_id);
-create policy "Users can delete their own ad media." on public.ad_media for delete using (auth.uid() = user_id);
-create policy "Users can update their own ad media." on public.ad_media for update using (auth.uid() = user_id);
+-- --- Políticas para `ads` ---
+DROP POLICY IF EXISTS "Ads are viewable by everyone." ON public.ads;
+CREATE POLICY "Ads are viewable by everyone." ON public.ads
+  FOR SELECT USING (true);
 
+DROP POLICY IF EXISTS "Advertisers can create ads." ON public.ads
+  FOR INSERT TO authenticated
+  WITH CHECK ((auth.uid() = user_id AND (SELECT role FROM public.profiles WHERE id = auth.uid()) = 'ADVERTISER'));
 
--- 6. Ratings
-create policy "Ratings are viewable by everyone." on public.ratings for select using (true);
-create policy "Authenticated users can insert ratings." on public.ratings for insert with check (auth.role() = 'authenticated');
-create policy "Users can update their own rating." on public.ratings for update using (auth.uid() = user_id);
-create policy "Users can't rate their own ads." on public.ratings for insert with check (
-  auth.uid() <> (select user_id from public.ads where id = ad_id)
-);
+DROP POLICY IF EXISTS "Advertisers can update their own ads." ON public.ads
+  FOR UPDATE TO authenticated
+  USING ((auth.uid() = user_id))
+  WITH CHECK ((auth.uid() = user_id));
 
+DROP POLICY IF EXISTS "Advertisers can delete their own ads." ON public.ads
+  FOR DELETE TO authenticated
+  USING ((auth.uid() = user_id));
+  
+-- --- Políticas para `ad_media` ---
+DROP POLICY IF EXISTS "Ad media is viewable by everyone." ON public.ad_media;
+CREATE POLICY "Ad media is viewable by everyone." ON public.ad_media
+  FOR SELECT USING (true);
 
--- 7. Comments
-create policy "Approved comments are viewable by everyone." on public.comments for select using (status = 'approved');
-create policy "Users can view their own comments." on public.comments for select using (auth.uid() = user_id);
-create policy "Ad owners can view comments on their ads." on public.comments for select using (
-  auth.uid() = (select user_id from public.ads where id = ad_id)
-);
-create policy "Authenticated users can insert comments." on public.comments for insert with check (auth.role() = 'authenticated');
-create policy "Users can delete their own comments." on public.comments for delete using (user_id = auth.uid());
-create policy "Ad owners can update comment status on their ads." on public.comments for update using (
-  auth.uid() = (select user_id from public.ads where id = ad_id)
-) with check (
-  auth.uid() = (select user_id from public.ads where id = ad_id)
-);
+DROP POLICY IF EXISTS "Advertisers can upload media for their ads." ON public.ad_media
+  FOR INSERT TO authenticated
+  WITH CHECK ((auth.uid() = user_id AND (SELECT role FROM public.profiles WHERE id = auth.uid()) = 'ADVERTISER'));
+  
+DROP POLICY IF EXISTS "Advertisers can delete their own media." ON public.ad_media
+  FOR DELETE TO authenticated
+  USING ((auth.uid() = user_id));
 
+-- --- Políticas para `categories` y `locations` (Tablas públicas) ---
+DROP POLICY IF EXISTS "Categories are viewable by everyone." ON public.categories;
+CREATE POLICY "Categories are viewable by everyone." ON public.categories
+  FOR SELECT USING (true);
 
--- 8. Boost Transactions
-create policy "Users can view their own transactions." on public.boost_transactions for select using (auth.uid() = user_id);
-create policy "Users can insert their own transactions." on public.boost_transactions for insert with check (auth.uid() = user_id);
-
-
--- Policies para Almacenamiento (Storage)
-
--- Avatars
-create policy "Avatar images are publicly accessible." on storage.objects for select using (bucket_id = 'avatars');
-create policy "Anyone can upload an avatar." on storage.objects for insert with check (bucket_id = 'avatars');
-create policy "Users can update their own avatar." on storage.objects for update using (auth.uid() = owner) with check (bucket_id = 'avatars');
-
--- Ad Media
-create policy "Ad media is publicly accessible." on storage.objects for select using (bucket_id = 'ad_media');
-create policy "Authenticated users can upload ad media." on storage.objects for insert with check (bucket_id = 'ad_media' and auth.role() = 'authenticated');
-create policy "Users can delete their own ad media." on storage.objects for delete using (auth.uid() = owner);
+DROP POLICY IF EXISTS "Locations are viewable by everyone." ON public.locations;
+CREATE POLICY "Locations are viewable by everyone." ON public.locations
+  FOR SELECT USING (true);
 
 
--- INSERCIÓN DE DATOS DE EJEMPLO (SEED DATA)
--- Puedes añadir más según tus necesidades
+-- --- Políticas para `storage.objects` (Almacenamiento) ---
+DROP POLICY IF EXISTS "Avatar images are publicly accessible." ON storage.objects;
+CREATE POLICY "Avatar images are publicly accessible." ON storage.objects
+  FOR SELECT USING (bucket_id = 'avatars');
 
--- Categorías
-insert into public.categories (name) values
-('Scorts'),
-('Chicas Trans'),
-('Scorts Gay'),
-('Servicios Virtuales');
+DROP POLICY IF EXISTS "Anyone can upload an avatar." ON storage.objects;
+CREATE POLICY "Anyone can upload an avatar." ON storage.objects
+  FOR INSERT WITH CHECK (bucket_id = 'avatars');
 
--- Ubicaciones (Países -> Regiones -> Ciudades)
+DROP POLICY IF EXISTS "Ad media files are publicly accessible." ON storage.objects;
+CREATE POLICY "Ad media files are publicly accessible." ON storage.objects
+  FOR SELECT USING (bucket_id = 'ad_media');
+
+DROP POLICY IF EXISTS "Advertisers can upload media." ON storage.objects;
+CREATE POLICY "Advertisers can upload media." ON storage.objects
+  FOR INSERT TO authenticated
+  WITH CHECK (bucket_id = 'ad_media' AND (SELECT role FROM public.profiles WHERE id = auth.uid()) = 'ADVERTISER');
+
+DROP POLICY IF EXISTS "Advertisers can delete their own media." ON storage.objects;
+CREATE POLICY "Advertisers can delete their own media." ON storage.objects
+  FOR DELETE TO authenticated
+  USING (bucket_id = 'ad_media' AND owner = auth.uid());
+
+
+-- ### DATOS INICIALES ###
+
+-- Insertar categorías si no existen
+INSERT INTO public.categories (name) VALUES
+  ('Scorts'),
+  ('Chicas Trans'),
+  ('Scorts Gay'),
+  ('Servicios Virtuales')
+ON CONFLICT (name) DO NOTHING;
+
+
+-- Insertar ubicaciones de ejemplo si no existen
+-- Es importante que el `id` no se especifique para que sea autoincremental
+-- PAÍSES
+INSERT INTO public.locations (name, type, code, phone_code) VALUES
+  ('Colombia', 'country', 'CO', '57'),
+  ('España', 'country', 'ES', '34')
+ON CONFLICT (id) DO NOTHING;
+
 DO $$
 DECLARE
-    colombia_id integer;
-    antioquia_id integer;
-    spain_id integer;
-    madrid_region_id integer;
+    colombia_id INT;
+    espana_id INT;
+    antioquia_id INT;
+    madrid_region_id INT;
 BEGIN
-    -- Insertar Países y obtener sus IDs
-    insert into public.locations (name, type, code, phone_code) values ('Colombia', 'country', 'CO', '57') returning id into colombia_id;
-    insert into public.locations (name, type, code, phone_code) values ('España', 'country', 'ES', '34') returning id into spain_id;
+    -- Obtener IDs de los países
+    SELECT id INTO colombia_id FROM public.locations WHERE name = 'Colombia' AND type = 'country';
+    SELECT id INTO espana_id FROM public.locations WHERE name = 'España' AND type = 'country';
 
-    -- Insertar Regiones usando los IDs de países
-    insert into public.locations (name, type, parent_id) values ('Antioquia', 'region', colombia_id) returning id into antioquia_id;
-    insert into public.locations (name, type, parent_id) values ('Comunidad de Madrid', 'region', spain_id) returning id into madrid_region_id;
+    -- REGIONES (dependen de los países)
+    IF colombia_id IS NOT NULL THEN
+        INSERT INTO public.locations (name, type, parent_id) VALUES
+            ('Antioquia', 'region', colombia_id)
+        ON CONFLICT (id) DO NOTHING;
+    END IF;
 
-    -- Insertar Ciudades/Subregiones usando los IDs de regiones
-    insert into public.locations (name, type, parent_id) values ('Medellín', 'subregion', antioquia_id);
-    insert into public.locations (name, type, parent_id) values ('Madrid', 'subregion', madrid_region_id);
+    IF espana_id IS NOT NULL THEN
+        INSERT INTO public.locations (name, type, parent_id) VALUES
+            ('Comunidad de Madrid', 'region', espana_id)
+        ON CONFLICT (id) DO NOTHING;
+    END IF;
+    
+    -- Obtener IDs de las regiones
+    SELECT id INTO antioquia_id FROM public.locations WHERE name = 'Antioquia' AND parent_id = colombia_id;
+    SELECT id INTO madrid_region_id FROM public.locations WHERE name = 'Comunidad de Madrid' AND parent_id = espana_id;
+
+    -- SUBREGIONES/CIUDADES (dependen de las regiones)
+    IF antioquia_id IS NOT NULL THEN
+        INSERT INTO public.locations (name, type, parent_id) VALUES
+            ('Medellín', 'subregion', antioquia_id)
+        ON CONFLICT (id) DO NOTHING;
+    END IF;
+    
+    IF madrid_region_id IS NOT NULL THEN
+        INSERT INTO public.locations (name, type, parent_id) VALUES
+            ('Madrid', 'subregion', madrid_region_id)
+        ON CONFLICT (id) DO NOTHING;
+    END IF;
+
 END $$;
