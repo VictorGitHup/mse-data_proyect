@@ -133,7 +133,9 @@ export async function updateAd(adId: number, formData: FormData) {
   if (slugError || !ad) {
     console.error('Could not fetch ad slug for revalidation:', slugError);
     // Redirect to dashboard even if revalidation fails for the public page
-    redirect('/dashboard');
+    revalidatePath('/dashboard');
+    revalidatePath(`/dashboard/ads/${adId}/manage`);
+    return redirect('/dashboard');
   }
 
   revalidatePath('/dashboard');
