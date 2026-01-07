@@ -13,6 +13,7 @@ export type Ad = {
   updated_at: string | null;
   boosted_until: string | null;
   slug: string;
+  tags: string[] | null;
 };
 
 export type AdMedia = {
@@ -72,7 +73,7 @@ export type AdForTable = Pick<Ad, 'id' | 'title' | 'created_at' | 'status' | 'sl
   category: { name: string } | null;
 };
 
-export type AdForCard = Pick<Ad, 'id' | 'title' | 'slug'> & {
+export type AdForCard = Pick<Ad, 'id' | 'title' | 'slug' | 'tags'> & {
   ad_media: { url: string }[];
   category: { name: string } | null;
   country: { name: string } | null;

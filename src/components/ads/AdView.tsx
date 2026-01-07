@@ -86,6 +86,15 @@ export default function AdView({ ad }: AdViewProps) {
                     <span>{advertiser.username}</span>
                   </div>
                   <CardTitle className="text-3xl font-bold">{ad.title}</CardTitle>
+                  {ad.tags && ad.tags.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mt-3">
+                      {ad.tags.map((tag) => (
+                        <Badge key={tag} variant="outline" className="text-sm">
+                          {tag}
+                        </Badge>
+                      ))}
+                    </div>
+                  )}
                   {locationString && (
                     <div className="flex items-center text-muted-foreground mt-2">
                       <MapPin className="mr-2 h-4 w-4" />
@@ -239,4 +248,3 @@ export default function AdView({ ad }: AdViewProps) {
     </div>
   );
 }
-

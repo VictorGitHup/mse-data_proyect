@@ -17,6 +17,7 @@ import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import MediaGallery from './MediaGallery';
 import { useToast } from '@/hooks/use-toast';
+import { TagInput } from './TagInput';
 
 type MediaFile = {
   file: File;
@@ -40,6 +41,7 @@ export default function CreateAdForm() {
   const [countries, setCountries] = useState<Location[]>([]);
   const [regions, setRegions] = useState<Location[]>([]);
   const [subregions, setSubregions] = useState<Location[]>([]);
+  const [tags, setTags] = useState<string[]>([]);
   
   const [selectedMedia, setSelectedMedia] = useState<MediaFile[]>([]);
   const [coverImageIndex, setCoverImageIndex] = useState(0);
@@ -182,6 +184,7 @@ export default function CreateAdForm() {
       formData.append('media', media.file);
     });
     formData.set('cover_image_index', String(coverImageIndex));
+    formData.set('tags', JSON.stringify(tags));
     await createAd(formData);
   };
 
@@ -288,6 +291,18 @@ export default function CreateAdForm() {
               ))}
             </div>
           )}
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="tags">Etiquetas</Label>
+          <TagInput
+            value={tags}
+            onChange={setTags}
+            placeholder="Añade etiquetas (ej: rubia, delgada...)"
+          />
+          <p className="text-xs text-muted-foreground">
+            Separa las etiquetas con una coma o presionando Enter. Ayudan a los usuarios a encontrar tu anuncio.
+          </p>
         </div>
 
         <div className="space-y-2">

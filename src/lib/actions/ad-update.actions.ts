@@ -6,9 +6,6 @@ import { createSupabaseServerActionClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 
-const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
-const ACCEPTED_MEDIA_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp", "video/mp4", "video/quicktime", "video/mov"];
-
 const fileSchema = z.instanceof(File).optional();
 
 const adUpdateSchema = z.object({
@@ -18,6 +15,7 @@ const adUpdateSchema = z.object({
   country_id: z.coerce.number().int().positive('Debes seleccionar un país.'),
   region_id: z.coerce.number().int().positive('Debes seleccionar una región.'),
   subregion_id: z.coerce.number().int().optional(),
+  tags: z.string().transform(val => val ? JSON.parse(val) : []).pipe(z.string().array().optional()),
   new_media: z.preprocess((arg) => (Array.isArray(arg) ? arg : [arg].filter(Boolean)), z.array(fileSchema).optional()),
   media_to_delete: z.string().transform(val => JSON.parse(val)),
   cover_image: z.string().transform(val => JSON.parse(val)).optional(),
@@ -43,7 +41,7 @@ export async function updateAd(adId: number, formData: FormData) {
     return redirect(`${errorRedirectUrl}?error=${encodeURIComponent(firstError)}`);
   }
 
-  const { title, description, category_id, country_id, region_id, subregion_id, new_media, media_to_delete, cover_image } = validatedFields.data;
+  const { title, description, category_id, country_id, region_id, subregion_id, tags, new_media, media_to_delete, cover_image } = validatedFields.data;
 
   try {
     // 1. Delete media marked for deletion
@@ -88,7 +86,7 @@ export async function updateAd(adId: number, formData: FormData) {
     
     // 3. Update ad info
     const { error: updateError } = await supabase.from('ads').update({
-        title, description, category_id, country_id, region_id, subregion_id: subregion_id || null, updated_at: new Date().toISOString()
+        title, description, category_id, country_id, region_id, subregion_id: subregion_id || null, tags: tags || [], updated_at: new Date().toISOString()
     }).eq('id', adId).eq('user_id', user.id);
     if (updateError) throw updateError;
     
@@ -141,5 +139,6 @@ export async function updateAd(adId: number, formData: FormData) {
   revalidatePath('/dashboard');
   revalidatePath(`/dashboard/ads/${adId}/manage`);
   revalidatePath(`/ad/${ad.slug}`);
+  revalidatePath('/');
   redirect('/dashboard');
 }

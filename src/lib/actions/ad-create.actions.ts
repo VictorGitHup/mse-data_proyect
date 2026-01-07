@@ -30,6 +30,7 @@ const adSchema = z.object({
   country_id: z.coerce.number().int().positive('Debes seleccionar un país.'),
   region_id: z.coerce.number().int().positive('Debes seleccionar una región.'),
   subregion_id: z.coerce.number().int().optional(),
+  tags: z.string().transform(val => val ? JSON.parse(val) : []).pipe(z.string().array().optional()),
   // Now, use preprocess with the fully defined mediaSchema.
   media: z.preprocess((arg) => {
     if (arg === undefined || arg === null) return [];
@@ -54,6 +55,7 @@ export async function createAd(formData: FormData) {
     country_id: formData.get('country_id'),
     region_id: formData.get('region_id'),
     subregion_id: formData.get('subregion_id'),
+    tags: formData.get('tags'),
     media: formData.getAll('media'),
     cover_image_index: formData.get('cover_image_index'),
   };
@@ -82,6 +84,7 @@ export async function createAd(formData: FormData) {
       country_id: adData.country_id,
       region_id: adData.region_id,
       subregion_id: adData.subregion_id || null,
+      tags: adData.tags || [],
       slug: adSlug,
       status: 'active',
     }).select('id').single();
@@ -150,5 +153,6 @@ export async function createAd(formData: FormData) {
   }
 
   revalidatePath('/dashboard');
+  revalidatePath('/');
   redirect('/dashboard');
 }

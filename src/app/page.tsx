@@ -30,6 +30,7 @@ export default async function Home({ searchParams }: HomePageProps) {
       id,
       title,
       slug,
+      tags,
       ad_media!inner(url, is_cover),
       category:categories(name),
       country:country_id(name)
@@ -41,7 +42,12 @@ export default async function Home({ searchParams }: HomePageProps) {
     .limit(20);
 
   if (searchParams.q) {
-    query = query.ilike('title', `%${searchParams.q}%`);
+    const searchTerms = searchParams.q.split(' ').filter(term => term.length > 0);
+    const titleQuery = searchTerms.map(term => `'${term}'`).join(' & ');
+    const tagsQuery = `{${searchTerms.map(term => `"${term}"`).join(',')}}`;
+    
+    // Search in title OR in tags
+    query = query.or(`title.fts.${titleQuery},tags.cs.${tagsQuery}`);
   }
   if (searchParams.category) {
     query = query.eq('category_id', searchParams.category);
