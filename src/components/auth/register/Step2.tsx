@@ -18,7 +18,7 @@ interface Step2Props {
 function SubmitButton() {
   const { pending } = useFormStatus();
   return (
-    <Button type="submit" disabled={pending} className="w-full">
+    <Button type="submit" disabled={pending} className="w-full sm:w-auto">
       {pending ? 'Creando cuenta...' : 'Crear Cuenta'}
     </Button>
   );
@@ -37,10 +37,10 @@ export default function Step2({ prevStep }: Step2Props) {
           <FormItem className="space-y-4">
             <FormLabel className="text-base">Selecciona tu tipo de cuenta</FormLabel>
             <FormControl>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div onClick={() => field.onChange('USER')}>
                   <Card className={cn(
-                    "cursor-pointer transition-all",
+                    "cursor-pointer transition-all h-full",
                     selectedRole === 'USER' ? 'border-primary ring-2 ring-primary' : 'hover:border-gray-400'
                   )}>
                     <CardHeader className="items-center text-center">
@@ -52,7 +52,7 @@ export default function Step2({ prevStep }: Step2Props) {
                 </div>
                 <div onClick={() => field.onChange('ADVERTISER')}>
                   <Card className={cn(
-                    "cursor-pointer transition-all",
+                    "cursor-pointer transition-all h-full",
                     selectedRole === 'ADVERTISER' ? 'border-primary ring-2 ring-primary' : 'hover:border-gray-400'
                   )}>
                     <CardHeader className="items-center text-center">
@@ -90,8 +90,8 @@ export default function Step2({ prevStep }: Step2Props) {
         )}
       />
 
-      <div className="flex justify-between items-center mt-6">
-        <Button type="button" variant="outline" onClick={prevStep}>
+      <div className="flex flex-col-reverse sm:flex-row justify-between items-center gap-4 mt-6">
+        <Button type="button" variant="outline" onClick={prevStep} className="w-full sm:w-auto">
           Atrás
         </Button>
         <SubmitButton />

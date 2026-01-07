@@ -147,17 +147,17 @@ export default function AccountForm({ user, profile }: AccountFormProps) {
           {/* --- Profile Section --- */}
           <div className="space-y-6">
             <h3 className="text-lg font-semibold border-b pb-2">Información Básica</h3>
-            <div className="flex items-center gap-6">
+            <div className="flex flex-col sm:flex-row items-center gap-6">
               <Avatar className="h-24 w-24">
                 <AvatarImage src={avatarUrl} alt={username} />
                 <AvatarFallback>
                   <UserIcon className="h-12 w-12 text-muted-foreground" />
                 </AvatarFallback>
               </Avatar>
-              <div className="space-y-2">
+              <div className="space-y-2 w-full sm:w-auto">
                   <Label htmlFor="avatar-upload" className="cursor-pointer">
                       <Button asChild variant="outline">
-                          <div className="w-full">
+                          <div className="w-full text-center">
                               {loading ? "Subiendo..." : "Cambiar Avatar"}
                           </div>
                       </Button>
@@ -170,14 +170,14 @@ export default function AccountForm({ user, profile }: AccountFormProps) {
                       disabled={loading}
                       className="hidden"
                   />
-                  <p className="text-xs text-muted-foreground">Sube tu foto de perfil.</p>
+                  <p className="text-xs text-muted-foreground text-center sm:text-left">Sube tu foto de perfil.</p>
               </div>
             </div>
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input id="email" type="email" value={user?.email || ""} disabled />
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="username">Nombre de usuario</Label>
                 <Input
@@ -211,7 +211,7 @@ export default function AccountForm({ user, profile }: AccountFormProps) {
               <h3 className="text-lg font-semibold">Información de Contacto Público</h3>
               <p className="text-sm text-muted-foreground">Esta información será visible en tus anuncios para que los usuarios puedan contactarte.</p>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="contactEmail">Email de Contacto</Label>
                   <div className="relative">
@@ -244,7 +244,7 @@ export default function AccountForm({ user, profile }: AccountFormProps) {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="contactTelegram">Usuario de Telegram</Label>
                   <div className="relative">
@@ -289,5 +289,3 @@ export default function AccountForm({ user, profile }: AccountFormProps) {
     </div>
   );
 }
-
-    

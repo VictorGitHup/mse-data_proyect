@@ -152,7 +152,7 @@ export default function AdFilters({ initialCategories, initialCountries }: AdFil
         </Select>
       </div>
       {hasActiveFilters && (
-         <Button variant="ghost" onClick={resetFilters} className="text-sm text-muted-foreground">
+         <Button variant="ghost" onClick={resetFilters} className="text-sm text-muted-foreground mt-2">
             Limpiar filtros
          </Button>
       )}

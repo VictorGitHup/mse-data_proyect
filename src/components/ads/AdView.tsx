@@ -36,6 +36,8 @@ export default function AdView({ ad }: AdViewProps) {
     return 0;
   }) || [];
 
+  const hasContactInfo = advertiser.contact_email || advertiser.contact_whatsapp || advertiser.contact_telegram || advertiser.contact_social_url;
+
   return (
     <div className="container mx-auto p-4 md:p-8">
       <div className="relative grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -153,7 +155,7 @@ export default function AdView({ ad }: AdViewProps) {
                     </a>
                   </Button>
                 )}
-                {!advertiser.contact_email && !advertiser.contact_whatsapp && !advertiser.contact_telegram && !advertiser.contact_social_url && (
+                {!hasContactInfo && (
                     <p className="text-center text-sm text-muted-foreground py-4">El anunciante no ha proporcionado información de contacto.</p>
                 )}
               </CardContent>
@@ -164,36 +166,38 @@ export default function AdView({ ad }: AdViewProps) {
       </div>
 
         {/* Floating contact bar for mobile */}
-       <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-background border-t p-2 flex justify-around items-center z-50">
-            {advertiser.contact_email && (
-              <Button asChild size="icon" variant="outline">
-                <a href={`mailto:${advertiser.contact_email}`} aria-label="Email">
-                  <Mail />
-                </a>
-              </Button>
-            )}
-            {advertiser.contact_whatsapp && (
-              <Button asChild size="icon" className="bg-green-500 hover:bg-green-600 text-white">
-                <a href={`https://wa.me/${advertiser.contact_whatsapp.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer" aria-label="WhatsApp">
-                  <Phone />
-                </a>
-              </Button>
-            )}
-            {advertiser.contact_telegram && (
-               <Button asChild size="icon" className="bg-blue-500 hover:bg-blue-600 text-white">
-                <a href={`https://t.me/${advertiser.contact_telegram.replace('@', '')}`} target="_blank" rel="noopener noreferrer" aria-label="Telegram">
-                  <Send />
-                </a>
-              </Button>
-            )}
-            {advertiser.contact_social_url && (
-              <Button asChild size="icon" variant="secondary">
-                <a href={advertiser.contact_social_url} target="_blank" rel="noopener noreferrer" aria-label="Perfil Social">
-                  <LinkIcon />
-                </a>
-              </Button>
-            )}
-      </div>
+       {hasContactInfo && (
+         <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-background border-t p-2 flex justify-around items-center z-50">
+              {advertiser.contact_email && (
+                <Button asChild size="icon" variant="outline">
+                  <a href={`mailto:${advertiser.contact_email}`} aria-label="Email">
+                    <Mail />
+                  </a>
+                </Button>
+              )}
+              {advertiser.contact_whatsapp && (
+                <Button asChild size="icon" className="bg-green-500 hover:bg-green-600 text-white">
+                  <a href={`https://wa.me/${advertiser.contact_whatsapp.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer" aria-label="WhatsApp">
+                    <Phone />
+                  </a>
+                </Button>
+              )}
+              {advertiser.contact_telegram && (
+                 <Button asChild size="icon" className="bg-blue-500 hover:bg-blue-600 text-white">
+                  <a href={`https://t.me/${advertiser.contact_telegram.replace('@', '')}`} target="_blank" rel="noopener noreferrer" aria-label="Telegram">
+                    <Send />
+                  </a>
+                </Button>
+              )}
+              {advertiser.contact_social_url && (
+                <Button asChild size="icon" variant="secondary">
+                  <a href={advertiser.contact_social_url} target="_blank" rel="noopener noreferrer" aria-label="Perfil Social">
+                    <LinkIcon />
+                  </a>
+                </Button>
+              )}
+        </div>
+       )}
 
     </div>
   );
