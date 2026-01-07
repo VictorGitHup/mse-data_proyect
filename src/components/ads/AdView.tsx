@@ -13,7 +13,6 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Mail, Phone, Send, Link as LinkIcon, User as UserIcon, MapPin } from "lucide-react";
 import type { AdWithRelations } from "@/lib/types";
-import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 
 interface AdViewProps {
   ad: AdWithRelations;
@@ -23,7 +22,6 @@ export default function AdView({ ad }: AdViewProps) {
   const advertiser = ad.profiles;
   const advertiserCountry = advertiser.country;
   
-  // Construct the full WhatsApp number
   const fullWhatsappNumber = (advertiserCountry?.phone_code && advertiser.contact_whatsapp)
     ? `${advertiserCountry.phone_code}${advertiser.contact_whatsapp}`.replace(/\D/g, '')
     : null;
@@ -36,24 +34,22 @@ export default function AdView({ ad }: AdViewProps) {
   
   const locationString = locationParts.join(', ');
 
-  const sortedMedia = ad.ad_media?.sort((a, b) => {
-    if (a.is_cover) return -1;
-    if (b.is_cover) return 1;
-    return 0;
-  }) || [];
+  const allMedia = ad.ad_media || [];
+  const coverMedia = allMedia.find(m => m.is_cover && m.type === 'image') || allMedia.find(m => m.type === 'image') || null;
+  const otherMedia = allMedia.filter(m => m.id !== coverMedia?.id);
 
   const hasContactInfo = advertiser.contact_email || fullWhatsappNumber || advertiser.contact_telegram || advertiser.contact_social_url;
 
   const getStatusVariant = (status: AdWithRelations['status']) => {
     switch (status) {
       case 'active':
-        return 'default'; // Greenish in some themes
+        return 'default';
       case 'inactive':
-        return 'secondary'; // Gray
+        return 'secondary';
       case 'draft':
-        return 'outline'; // With border
+        return 'outline';
       case 'expired':
-        return 'destructive'; // Red
+        return 'destructive';
       default:
         return 'secondary';
     }
@@ -103,49 +99,59 @@ export default function AdView({ ad }: AdViewProps) {
               </div>
             </CardHeader>
             <CardContent>
-              {sortedMedia.length > 0 ? (
-                <Carousel className="w-full mb-6" opts={{ loop: true }}>
-                  <CarouselContent>
-                    {sortedMedia.map((media) => (
-                      <CarouselItem key={media.id}>
-                        <div className="relative w-full aspect-video rounded-lg overflow-hidden bg-muted">
-                           {media.type === 'image' ? (
-                             <Image
-                                src={media.url}
-                                alt={ad.title}
-                                fill
-                                style={{ objectFit: 'contain' }}
-                                className="bg-muted"
-                                priority={media.is_cover}
-                              />
-                           ) : (
-                              <video
-                                src={media.url}
-                                controls
-                                className="w-full h-full object-contain bg-black"
-                              >
-                                Tu navegador no soporta el tag de video.
-                              </video>
-                           )}
-                        </div>
-                      </CarouselItem>
-                    ))}
-                  </CarouselContent>
-                  {sortedMedia.length > 1 && (
-                    <>
-                      <CarouselPrevious className="left-4" />
-                      <CarouselNext className="right-4" />
-                    </>
-                  )}
-                </Carousel>
+              {/* Cover Media */}
+              {coverMedia ? (
+                <div className="relative w-full aspect-video rounded-lg overflow-hidden bg-muted mb-6">
+                  <Image
+                    src={coverMedia.url}
+                    alt={ad.title}
+                    fill
+                    style={{ objectFit: 'contain' }}
+                    className="bg-muted"
+                    priority
+                  />
+                </div>
               ) : (
                 <div className="w-full aspect-video rounded-lg bg-muted flex items-center justify-center text-muted-foreground mb-6">
-                  <span>Sin imágenes o videos</span>
+                  <span>Sin imagen de portada</span>
                 </div>
               )}
-              <div className="prose prose-lg max-w-none text-foreground whitespace-pre-wrap">
+
+              {/* Description */}
+              <div className="prose prose-lg max-w-none text-foreground whitespace-pre-wrap mb-8">
                 <p>{ad.description}</p>
               </div>
+
+              {/* Other Media Gallery */}
+              {otherMedia.length > 0 && (
+                <div className="pt-8 border-t">
+                  <h3 className="text-2xl font-bold mb-4">Galería</h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {otherMedia.map(media => (
+                      <div key={media.id} className="relative w-full aspect-video rounded-lg overflow-hidden bg-muted">
+                        {media.type === 'image' ? (
+                          <Image
+                            src={media.url}
+                            alt={`Imagen de galería para ${ad.title}`}
+                            fill
+                            style={{ objectFit: 'contain' }}
+                            className="bg-muted"
+                          />
+                        ) : (
+                          <video
+                            src={media.url}
+                            controls
+                            className="w-full h-full object-contain bg-black"
+                          >
+                            Tu navegador no soporta el tag de video.
+                          </video>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
             </CardContent>
           </Card>
         </div>
