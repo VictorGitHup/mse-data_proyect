@@ -9,9 +9,8 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { categories } from '@/lib/data';
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
-import type { Location } from '@/lib/types';
+import type { Location, Category } from '@/lib/types';
 
 
 function SubmitButton() {
@@ -40,6 +39,7 @@ interface EditAdFormProps {
 
 export default function EditAdForm({ ad }: EditAdFormProps) {
   const supabase = createSupabaseBrowserClient();
+  const [categories, setCategories] = useState<Category[]>([]);
   const [countries, setCountries] = useState<Location[]>([]);
   const [regions, setRegions] = useState<Location[]>([]);
   const [subregions, setSubregions] = useState<Location[]>([]);
@@ -50,9 +50,13 @@ export default function EditAdForm({ ad }: EditAdFormProps) {
   // Bind the ad ID to the update action
   const updateAdWithId = updateAd.bind(null, ad.id);
 
-  // Effect to load initial data (countries, and then regions/subregions for the specific ad)
+  // Effect to load initial data (categories, countries, and then regions/subregions for the specific ad)
   useEffect(() => {
     async function loadInitialData() {
+      // 0. Fetch categories
+      const { data: categoryData } = await supabase.from('categories').select('*');
+      if (categoryData) setCategories(categoryData);
+
       // 1. Fetch all countries
       const { data: countryData } = await supabase
         .from('locations')
