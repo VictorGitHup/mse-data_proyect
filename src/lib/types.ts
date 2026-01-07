@@ -67,3 +67,9 @@ export type AdWithMedia = Ad & {
 export type AdForTable = Pick<Ad, 'id' | 'title' | 'created_at' | 'status' | 'slug'> & {
   category: { name: string } | null;
 };
+
+export type AdForCard = Pick<Ad, 'id' | 'title' | 'slug'> & {
+  ad_media: { url: string }[];
+  category: { name: string } | null;
+  country: { name: string } | null;
+};
