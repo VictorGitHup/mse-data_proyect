@@ -105,3 +105,4 @@ export type AdCommentWithProfile = AdComment & {
     profiles: Pick<Profile, 'username' | 'avatar_url'>
 };
 
+
