@@ -23,7 +23,51 @@ export default async function Home({ searchParams }: HomePageProps) {
   const { data: categories } = await supabase.from('categories').select('id, name').order('name');
   const { data: countries } = await supabase.from('locations').select('id, name').eq('type', 'country').order('name');
 
-  // Build query for ads based on search params
+  // --- Smart Search Logic ---
+  let queryText = searchParams.q || '';
+  const searchTerms = queryText.toLowerCase().split(' ').filter(term => term.length > 1);
+  let locationFilters: { country?: string, region?: string, subregion?: string } = {
+    country: searchParams.country,
+    region: searchParams.region,
+    subregion: searchParams.subregion,
+  };
+  const generalSearchTerms: string[] = [];
+
+  if (queryText) {
+    const { data: matchedLocations } = await supabase
+      .from('locations')
+      .select('id, name, type, parent_id')
+      .in('name', searchTerms.map(term => term.charAt(0).toUpperCase() + term.slice(1))); // Capitalize for matching
+
+    const foundLocationNames: string[] = [];
+
+    // Prioritize subregion, then region, then country
+    const subregionMatch = matchedLocations?.find(l => l.type === 'subregion');
+    const regionMatch = matchedLocations?.find(l => l.type === 'region');
+    const countryMatch = matchedLocations?.find(l => l.type === 'country');
+
+    if (subregionMatch) {
+      locationFilters.subregion = String(subregionMatch.id);
+      foundLocationNames.push(subregionMatch.name.toLowerCase());
+    }
+    if (regionMatch) {
+      locationFilters.region = String(regionMatch.id);
+      foundLocationNames.push(regionMatch.name.toLowerCase());
+    }
+    if (countryMatch) {
+      locationFilters.country = String(countryMatch.id);
+      foundLocationNames.push(countryMatch.name.toLowerCase());
+    }
+    
+    // Terms that are not locations are general search terms
+    searchTerms.forEach(term => {
+      if (!foundLocationNames.includes(term)) {
+        generalSearchTerms.push(term);
+      }
+    });
+  }
+
+  // --- Ad Query Construction ---
   let query = supabase
     .from("ads")
     .select(`
@@ -41,25 +85,24 @@ export default async function Home({ searchParams }: HomePageProps) {
     .order("created_at", { ascending: false })
     .limit(20);
 
-  if (searchParams.q) {
-    const searchTerms = searchParams.q.split(' ').filter(term => term.length > 0);
-    const titleQuery = searchTerms.map(term => `'${term}'`).join(' & ');
-    const tagsQuery = `{${searchTerms.map(term => `"${term}"`).join(',')}}`;
-    
-    // Search in title OR in tags
+  if (generalSearchTerms.length > 0) {
+    const titleQuery = generalSearchTerms.map(term => `'${term}'`).join(' & ');
+    const tagsQuery = `{${generalSearchTerms.map(term => `"${term}"`).join(',')}}`;
     query = query.or(`title.fts.${titleQuery},tags.cs.${tagsQuery}`);
   }
+
+  // Apply filters from URL search params OR smart search
   if (searchParams.category) {
     query = query.eq('category_id', searchParams.category);
   }
-  if (searchParams.country) {
-    query = query.eq('country_id', searchParams.country);
+  if (locationFilters.country) {
+    query = query.eq('country_id', locationFilters.country);
   }
-  if (searchParams.region) {
-    query = query.eq('region_id', searchParams.region);
+  if (locationFilters.region) {
+    query = query.eq('region_id', locationFilters.region);
   }
-  if (searchParams.subregion) {
-    query = query.eq('subregion_id', searchParams.subregion);
+  if (locationFilters.subregion) {
+    query = query.eq('subregion_id', locationFilters.subregion);
   }
 
   const { data: ads, error } = await query as { data: AdForCard[], error: any };
@@ -67,6 +110,14 @@ export default async function Home({ searchParams }: HomePageProps) {
   if (error) {
     console.error("Error fetching ads for homepage:", error);
   }
+
+  // We pass the potentially modified filters to the AdFilters component
+  // so the dropdowns reflect the smart search.
+  const initialFilterState = {
+    ...searchParams,
+    ...locationFilters,
+    q: generalSearchTerms.join(' '), // Show only non-location terms in search bar
+  };
 
   return (
     <main className="container mx-auto p-4 md:p-8">
@@ -82,6 +133,7 @@ export default async function Home({ searchParams }: HomePageProps) {
       <AdFilters
         initialCategories={categories as Category[]}
         initialCountries={countries as Location[]}
+        initialFilterState={initialFilterState}
       />
 
       {ads && ads.length > 0 ? (

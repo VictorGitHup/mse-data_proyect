@@ -12,9 +12,16 @@ import { Button } from '../ui/button';
 interface AdFiltersProps {
   initialCategories: Category[];
   initialCountries: Location[];
+  initialFilterState?: { // Added to receive initial state from server
+    q?: string;
+    category?: string;
+    country?: string;
+    region?: string;
+    subregion?: string;
+  }
 }
 
-export default function AdFilters({ initialCategories, initialCountries }: AdFiltersProps) {
+export default function AdFilters({ initialCategories, initialCountries, initialFilterState }: AdFiltersProps) {
   const supabase = createSupabaseBrowserClient();
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -23,10 +30,11 @@ export default function AdFilters({ initialCategories, initialCountries }: AdFil
   const [regions, setRegions] = useState<Location[]>([]);
   const [subregions, setSubregions] = useState<Location[]>([]);
 
-  const selectedCategory = searchParams.get('category') || '';
-  const selectedCountry = searchParams.get('country') || '';
-  const selectedRegion = searchParams.get('region') || '';
-  const selectedSubregion = searchParams.get('subregion') || '';
+  // Use initialFilterState from server or fallback to searchParams
+  const selectedCategory = initialFilterState?.category || searchParams.get('category') || '';
+  const selectedCountry = initialFilterState?.country || searchParams.get('country') || '';
+  const selectedRegion = initialFilterState?.region || searchParams.get('region') || '';
+  const selectedSubregion = initialFilterState?.subregion || searchParams.get('subregion') || '';
 
   const updateSearchParam = (key: string, value: string) => {
     const params = new URLSearchParams(searchParams);
@@ -84,12 +92,12 @@ export default function AdFilters({ initialCategories, initialCountries }: AdFil
     };
     fetchSubregions();
   }, [selectedRegion, supabase]);
-
+  
   const hasActiveFilters = !!(searchParams.get('q') || selectedCategory || selectedCountry || selectedRegion || selectedSubregion);
 
   return (
     <div className="p-4 border rounded-lg bg-card space-y-4">
-      <AdSearch />
+      <AdSearch initialQuery={initialFilterState?.q} />
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Category Filter */}
         <Select value={selectedCategory} onValueChange={(value) => updateSearchParam('category', value)}>
