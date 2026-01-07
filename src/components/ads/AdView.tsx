@@ -12,13 +12,15 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Mail, Phone, Send, Link as LinkIcon, User as UserIcon, MapPin, Video } from "lucide-react";
-import type { AdWithRelations } from "@/lib/types";
+import type { AdWithRelations, AdForCard } from "@/lib/types";
+import AdCard from "./AdCard";
 
 interface AdViewProps {
   ad: AdWithRelations;
+  similarAds: AdForCard[];
 }
 
-export default function AdView({ ad }: AdViewProps) {
+export default function AdView({ ad, similarAds }: AdViewProps) {
   const advertiser = ad.profiles;
   const advertiserCountry = advertiser.country;
   
@@ -218,10 +220,9 @@ export default function AdView({ ad }: AdViewProps) {
             </Card>
           </div>
         </div>
-
       </div>
 
-        {/* Floating contact bar for mobile */}
+       {/* Floating contact bar for mobile */}
        {hasContactInfo && (
          <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-background border-t p-2 flex justify-around items-center z-50">
               {advertiser.contact_email && (
@@ -254,6 +255,20 @@ export default function AdView({ ad }: AdViewProps) {
               )}
         </div>
        )}
+      
+      {/* Similar Ads Section */}
+      {similarAds && similarAds.length > 0 && (
+        <div className="mt-16">
+          <h2 className="text-3xl font-bold tracking-tight mb-6">
+            También te podría interesar
+          </h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            {similarAds.map((similarAd) => (
+              <AdCard key={similarAd.id} ad={similarAd} />
+            ))}
+          </div>
+        </div>
+      )}
 
     </div>
   );
