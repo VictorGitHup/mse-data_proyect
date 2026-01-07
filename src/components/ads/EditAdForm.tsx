@@ -14,8 +14,9 @@ import type { Location, Category, AdMedia, AdWithMedia } from '@/lib/types';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
-import { Star, X, ImagePlus, Video } from 'lucide-react';
+import { Star, X, ImagePlus, Video, Library } from 'lucide-react';
 import { TagInput } from './TagInput';
+import MediaGallery from './MediaGallery';
 
 type MediaFile = {
   file: File;
@@ -46,6 +47,7 @@ export default function EditAdForm({ ad }: EditAdFormProps) {
   const [regions, setRegions] = useState<Location[]>([]);
   const [subregions, setSubregions] = useState<Location[]>([]);
   const [tags, setTags] = useState<string[]>(ad.tags || []);
+  const [isGalleryOpen, setIsGalleryOpen] = useState(false);
 
   const [selectedCountryId, setSelectedCountryId] = useState<number | null>(ad.country_id);
   const [selectedRegionId, setSelectedRegionId] = useState<number | null>(ad.region_id);
@@ -136,6 +138,44 @@ export default function EditAdForm({ ad }: EditAdFormProps) {
     }
   };
 
+  const handleSelectFromGallery = (galleryMedia: AdMedia[]) => {
+    const totalMediaCount = existingMedia.length + newMediaFiles.length;
+    const currentVideosCount = existingMedia.filter(m => m.type === 'video').length + newMediaFiles.filter(m => m.type === 'video').length;
+    let newVideosCount = 0;
+
+    const newMediaPromises = galleryMedia.reduce((acc, media) => {
+        const isVideo = media.type === 'video';
+        if (isVideo) {
+            if (currentVideosCount + newVideosCount >= 1) {
+                toast({ title: 'Límite de video alcanzado', description: 'Solo puedes subir un video por anuncio.', variant: 'destructive' });
+                return acc;
+            }
+            newVideosCount++;
+        }
+        acc.push(
+            fetch(media.url)
+                .then(response => response.blob())
+                .then(blob => new File([blob], `gallery-${media.id}`, { type: blob.type }))
+                .then(file => ({
+                    file,
+                    preview: media.url,
+                    type: media.type as 'image' | 'video',
+                }))
+        );
+        return acc;
+    }, [] as Promise<MediaFile>[]);
+
+    Promise.all(newMediaPromises).then(newMediaFiles => {
+        const combinedNewFiles = [...newMediaFiles, ...newMediaFiles];
+        if (totalMediaCount + combinedNewFiles.length > 5) {
+            toast({ title: 'Límite de archivos alcanzado', description: 'Puedes subir un máximo de 5 archivos.', variant: 'destructive' });
+        }
+        setNewMediaFiles(prev => [...prev, ...newMediaFiles].slice(0, 5 - existingMedia.length));
+    });
+    setIsGalleryOpen(false);
+  };
+
+
   const removeExistingMedia = (id: number) => {
     setExistingMedia(prev => prev.filter(m => m.id !== id));
     setMediaToDelete(prev => [...prev, id]);
@@ -164,69 +204,81 @@ export default function EditAdForm({ ad }: EditAdFormProps) {
   };
 
   return (
-    <form action={formAction} className="space-y-6">
-      <div className="space-y-2">
-        <Label htmlFor="title">Título del Anuncio</Label>
-        <Input id="title" name="title" required defaultValue={ad.title} />
-      </div>
+    <>
+      <MediaGallery
+        isOpen={isGalleryOpen}
+        onOpenChange={setIsGalleryOpen}
+        onSelectMedia={handleSelectFromGallery}
+      />
+      <form action={formAction} className="space-y-6">
+        <div className="space-y-2">
+          <Label htmlFor="title">Título del Anuncio</Label>
+          <Input id="title" name="title" required defaultValue={ad.title} />
+        </div>
 
-      <div className="space-y-2">
-          <Label htmlFor="media">Imágenes y Videos (hasta 5 archivos, 1 video máx.)</Label>
-          <Input 
-            id="media" 
-            name="media-upload"
-            type="file"
-            accept="image/png, image/jpeg, image/webp, video/mp4, video/quicktime, video/mov"
-            multiple
-            onChange={handleFileChange}
-            ref={fileInputRef}
-            className="hidden"
-            disabled={existingMedia.length + newMediaFiles.length >= 5}
-          />
-          <Button type="button" variant="outline" onClick={() => fileInputRef.current?.click()} disabled={existingMedia.length + newMediaFiles.length >= 5}>
-            <ImagePlus className="mr-2 h-4 w-4" />
-            Añadir Archivos
-          </Button>
-          <p className="text-xs text-muted-foreground">
-            {5 - (existingMedia.length + newMediaFiles.length)} espacios restantes. La primera imagen será la portada por defecto.
-          </p>
-          
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2 mt-4">
-              {existingMedia.map((media) => (
-                <div key={media.id} className="relative group aspect-square">
-                  {media.type === 'image' ? (
-                    <Image src={media.url} alt="Media existente" fill sizes="20vw" className="object-cover rounded-md" />
-                  ) : (
-                    <video src={media.url} muted loop playsInline className="object-cover rounded-md w-full h-full" />
-                  )}
-                   {media.type === 'video' && <div className="absolute top-1 right-1 bg-black/50 text-white p-1 rounded-full"><Video className="h-3 w-3" /></div>}
-                  <div className="absolute inset-0 bg-black bg-opacity-30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                     {media.type === 'image' && (
-                        <button type="button" onClick={() => setCoverImage({ type: 'existing', value: media.id })} className={cn("p-1.5 rounded-full bg-white/70 hover:bg-white", coverImage?.type === 'existing' && coverImage.value === media.id ? "text-yellow-400" : "text-gray-600")}><Star className="h-5 w-5" fill={coverImage?.type === 'existing' && coverImage.value === media.id ? "currentColor" : "none"} /></button>
-                      )}
-                    <button type="button" onClick={() => removeExistingMedia(media.id)} className="p-1.5 rounded-full bg-white/70 text-red-500 hover:bg-white"><X className="h-5 w-5" /></button>
-                  </div>
-                  {coverImage?.type === 'existing' && coverImage.value === media.id && media.type === 'image' && <div className="absolute top-1 left-1 bg-yellow-400 text-white p-1 rounded-full"><Star className="h-3 w-3" /></div>}
-                </div>
-              ))}
-              {newMediaFiles.map((media, index) => (
-                <div key={media.preview} className="relative group aspect-square">
-                  {media.type === 'image' ? (
-                    <Image src={media.preview} alt={`Vista previa ${index + 1}`} fill sizes="20vw" className="object-cover rounded-md" />
-                  ) : (
-                     <video src={media.preview} muted loop playsInline className="object-cover rounded-md w-full h-full" />
-                  )}
-                  {media.type === 'video' && <div className="absolute top-1 right-1 bg-black/50 text-white p-1 rounded-full"><Video className="h-3 w-3" /></div>}
-                  <div className="absolute inset-0 bg-black bg-opacity-30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                     {media.type === 'image' && (
-                        <button type="button" onClick={() => setCoverImage({ type: 'new', value: media.preview })} className={cn("p-1.5 rounded-full bg-white/70 hover:bg-white", coverImage?.type === 'new' && coverImage.value === media.preview ? "text-yellow-400" : "text-gray-600")}><Star className="h-5 w-5" fill={coverImage?.type === 'new' && coverImage.value === media.preview ? "currentColor" : "none"} /></button>
-                     )}
-                    <button type="button" onClick={() => removeNewMedia(index)} className="p-1.5 rounded-full bg-white/70 text-red-500 hover:bg-white"><X className="h-5 w-5" /></button>
-                  </div>
-                  {coverImage?.type === 'new' && coverImage.value === media.preview && media.type === 'image' && <div className="absolute top-1 left-1 bg-yellow-400 text-white p-1 rounded-full"><Star className="h-3 w-3" /></div>}
-                </div>
-              ))}
+        <div className="space-y-2">
+            <Label htmlFor="media">Imágenes y Videos (hasta 5 archivos, 1 video máx.)</Label>
+            <Input 
+              id="media" 
+              name="media-upload"
+              type="file"
+              accept="image/png, image/jpeg, image/webp, video/mp4, video/quicktime, video/mov"
+              multiple
+              onChange={handleFileChange}
+              ref={fileInputRef}
+              className="hidden"
+              disabled={existingMedia.length + newMediaFiles.length >= 5}
+            />
+            <div className="flex gap-2">
+              <Button type="button" variant="outline" onClick={() => fileInputRef.current?.click()} disabled={existingMedia.length + newMediaFiles.length >= 5}>
+                <ImagePlus className="mr-2 h-4 w-4" />
+                Añadir Archivos
+              </Button>
+              <Button type="button" variant="secondary" onClick={() => setIsGalleryOpen(true)} disabled={existingMedia.length + newMediaFiles.length >= 5}>
+                <Library className="mr-2 h-4 w-4" />
+                Usar de mi Galería
+              </Button>
             </div>
+            <p className="text-xs text-muted-foreground">
+              {5 - (existingMedia.length + newMediaFiles.length)} espacios restantes. La primera imagen será la portada por defecto.
+            </p>
+            
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2 mt-4">
+                {existingMedia.map((media) => (
+                  <div key={media.id} className="relative group aspect-square">
+                    {media.type === 'image' ? (
+                      <Image src={media.url} alt="Media existente" fill sizes="20vw" className="object-cover rounded-md" />
+                    ) : (
+                      <video src={media.url} muted loop playsInline className="object-cover rounded-md w-full h-full" />
+                    )}
+                    {media.type === 'video' && <div className="absolute top-1 right-1 bg-black/50 text-white p-1 rounded-full"><Video className="h-3 w-3" /></div>}
+                    <div className="absolute inset-0 bg-black bg-opacity-30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                      {media.type === 'image' && (
+                          <button type="button" onClick={() => setCoverImage({ type: 'existing', value: media.id })} className={cn("p-1.5 rounded-full bg-white/70 hover:bg-white", coverImage?.type === 'existing' && coverImage.value === media.id ? "text-yellow-400" : "text-gray-600")}><Star className="h-5 w-5" fill={coverImage?.type === 'existing' && coverImage.value === media.id ? "currentColor" : "none"} /></button>
+                        )}
+                      <button type="button" onClick={() => removeExistingMedia(media.id)} className="p-1.5 rounded-full bg-white/70 text-red-500 hover:bg-white"><X className="h-5 w-5" /></button>
+                    </div>
+                    {coverImage?.type === 'existing' && coverImage.value === media.id && media.type === 'image' && <div className="absolute top-1 left-1 bg-yellow-400 text-white p-1 rounded-full"><Star className="h-3 w-3" /></div>}
+                  </div>
+                ))}
+                {newMediaFiles.map((media, index) => (
+                  <div key={media.preview} className="relative group aspect-square">
+                    {media.type === 'image' ? (
+                      <Image src={media.preview} alt={`Vista previa ${index + 1}`} fill sizes="20vw" className="object-cover rounded-md" />
+                    ) : (
+                      <video src={media.preview} muted loop playsInline className="object-cover rounded-md w-full h-full" />
+                    )}
+                    {media.type === 'video' && <div className="absolute top-1 right-1 bg-black/50 text-white p-1 rounded-full"><Video className="h-3 w-3" /></div>}
+                    <div className="absolute inset-0 bg-black bg-opacity-30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                      {media.type === 'image' && (
+                          <button type="button" onClick={() => setCoverImage({ type: 'new', value: media.preview })} className={cn("p-1.5 rounded-full bg-white/70 hover:bg-white", coverImage?.type === 'new' && coverImage.value === media.preview ? "text-yellow-400" : "text-gray-600")}><Star className="h-5 w-5" fill={coverImage?.type === 'new' && coverImage.value === media.preview ? "currentColor" : "none"} /></button>
+                      )}
+                      <button type="button" onClick={() => removeNewMedia(index)} className="p-1.5 rounded-full bg-white/70 text-red-500 hover:bg-white"><X className="h-5 w-5" /></button>
+                    </div>
+                    {coverImage?.type === 'new' && coverImage.value === media.preview && media.type === 'image' && <div className="absolute top-1 left-1 bg-yellow-400 text-white p-1 rounded-full"><Star className="h-3 w-3" /></div>}
+                  </div>
+                ))}
+              </div>
         </div>
       
       <div className="space-y-2">
@@ -318,5 +370,6 @@ export default function EditAdForm({ ad }: EditAdFormProps) {
 
       <SubmitButton />
     </form>
+    </>
   );
 }
