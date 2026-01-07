@@ -1,344 +1,372 @@
 
--- =================================================================
--- 1. TIPOS DE DATOS PERSONALIZADOS (ENUMS)
--- Define tipos reutilizables para garantizar la consistencia de los datos.
--- =================================================================
+-- Plataforma de Anuncios Clasificados - Schema v1.0
 
--- Define los roles de usuario en el sistema.
-create type public.user_role as enum ('USER', 'ADVERTISER');
+-- 1. Borrar tablas existentes (si existen) para un inicio limpio.
+-- Esto es útil para desarrollo, pero debe usarse con precaución en producción.
+DROP TABLE IF EXISTS public.boost_transactions CASCADE;
+DROP TABLE IF EXISTS public.comments CASCADE;
+DROP TABLE IF EXISTS public.ratings CASCADE;
+DROP TABLE IF EXISTS public.ad_media CASCADE;
+DROP TABLE IF EXISTS public.ads CASCADE;
+DROP TABLE IF EXISTS public.locations CASCADE;
+DROP TABLE IF EXISTS public.categories CASCADE;
+DROP TABLE IF EXISTS public.profiles CASCADE;
 
--- Define los posibles estados de un anuncio.
-create type public.ad_status as enum ('active', 'inactive', 'draft', 'expired');
+-- 2. Definir los tipos ENUM para roles y estados.
+-- Esto asegura la consistencia de los datos en toda la aplicación.
 
--- Define los tipos de medios que se pueden asociar a un anuncio.
-create type public.ad_media_type as enum ('image', 'video');
+CREATE TYPE public.user_role AS ENUM (
+  'USER',       -- Usuario estándar que puede navegar, calificar y comentar.
+  'ADVERTISER'  -- Usuario que puede crear y gestionar anuncios.
+);
 
--- Define los estados de los comentarios para moderación.
-create type public.comment_status as enum ('pending', 'approved', 'rejected');
+CREATE TYPE public.ad_status AS ENUM (
+  'active',     -- El anuncio es visible públicamente.
+  'inactive',   -- El anuncio está pausado por el anunciante y no es visible.
+  'draft',      -- El anuncio está en borrador y solo es visible para el anunciante.
+  'expired'     -- El anuncio ha expirado y no es visible.
+);
 
--- Define los tipos de ubicaciones geográficas.
-create type public.location_type as enum ('country', 'region', 'subregion');
+CREATE TYPE public.ad_media_type AS ENUM (
+  'image',
+  'video'
+);
+
+CREATE TYPE public.comment_status AS ENUM (
+  'pending',    -- El comentario está esperando aprobación del anunciante.
+  'approved',   -- El comentario es visible públicamente.
+  'rejected'    -- El comentario ha sido rechazado y no es visible.
+);
 
 
--- =================================================================
--- 2. TABLAS
--- Definición de las tablas principales de la base de datos.
--- =================================================================
+-- 3. Tabla de Perfiles de Usuario (public.profiles)
+-- Almacena datos públicos del usuario, extendiendo la tabla auth.users.
 
--- Tabla para almacenar perfiles de usuario públicos.
--- Se vincula con la tabla `auth.users` de Supabase.
-create table public.profiles (
-  id uuid not null primary key references auth.users on delete cascade,
-  username text unique not null,
+CREATE TABLE public.profiles (
+  id uuid NOT NULL PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+  username text NOT NULL UNIQUE,
   full_name text,
   avatar_url text,
-  role public.user_role not null default 'USER',
+  role user_role NOT NULL,
   updated_at timestamptz,
-  -- Campos de contacto para anunciantes
+  -- Campos de contacto específicos para anunciantes
   contact_email text,
   contact_whatsapp text,
   contact_telegram text,
-  contact_social_url text,
-
-  constraint username_length check (char_length(username) >= 3)
+  contact_social_url text
 );
-comment on table public.profiles is 'Datos públicos del perfil para cada usuario.';
-comment on column public.profiles.id is 'Referencia al usuario en auth.users.';
+
+COMMENT ON TABLE public.profiles IS 'Almacena datos públicos del perfil de usuario.';
 
 
--- Tabla para categorías de anuncios.
-create table public.categories (
-  id serial primary key,
-  name text not null unique
+-- 4. Tabla de Categorías (public.categories)
+-- Almacena las categorías de los anuncios (Ej: Scorts, Chicas Trans).
+
+CREATE TABLE public.categories (
+  id SERIAL PRIMARY KEY,
+  name text NOT NULL UNIQUE
 );
-comment on table public.categories is 'Categorías para clasificar los anuncios.';
+
+COMMENT ON TABLE public.categories IS 'Almacena las categorías para los anuncios.';
+
+-- Insertar categorías iniciales
+INSERT INTO public.categories (name) VALUES
+('Scorts'),
+('Chicas Trans'),
+('Scorts Gay'),
+('Servicios Virtuales');
 
 
--- Tabla para ubicaciones geográficas (países, regiones, subregiones).
-create table public.locations (
-    id serial primary key,
-    name text not null,
-    type public.location_type not null,
-    parent_id integer references public.locations(id) on delete cascade,
-    code text -- Opcional, para códigos estandarizados (ej. DANE, ISO).
+-- 5. Tabla de Ubicaciones (public.locations)
+-- Estructura jerárquica para países, regiones y subregiones.
+
+CREATE TABLE public.locations (
+  id SERIAL PRIMARY KEY,
+  name text NOT NULL,
+  type text NOT NULL, -- 'country', 'region', 'subregion'
+  parent_id INTEGER REFERENCES public.locations(id),
+  code text -- Código opcional (DANE, ISO, etc.)
 );
-create index idx_locations_parent_id on public.locations(parent_id);
-comment on table public.locations is 'Almacena la estructura jerárquica de ubicaciones.';
+
+COMMENT ON TABLE public.locations IS 'Almacena ubicaciones jerárquicas (países, regiones, ciudades).';
 
 
--- Tabla principal de anuncios.
-create table public.ads (
-  id bigserial primary key,
-  user_id uuid not null references public.profiles on delete cascade,
-  title text not null,
-  description text not null,
-  slug text not null unique,
-  category_id integer not null references public.categories on delete set null,
-  country_id integer references public.locations(id) on delete set null,
-  region_id integer references public.locations(id) on delete set null,
-  subregion_id integer references public.locations(id) on delete set null,
-  status public.ad_status not null default 'draft',
-  created_at timestamptz not null default now(),
+-- 6. Tabla de Anuncios (public.ads)
+
+CREATE TABLE public.ads (
+  id BIGSERIAL PRIMARY KEY,
+  user_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  title text NOT NULL,
+  description text NOT NULL,
+  category_id INTEGER NOT NULL REFERENCES public.categories(id),
+  country_id INTEGER REFERENCES public.locations(id),
+  region_id INTEGER REFERENCES public.locations(id),
+  subregion_id INTEGER REFERENCES public.locations(id),
+  status ad_status NOT NULL DEFAULT 'draft',
+  created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz,
-  boosted_until timestamptz
+  boosted_until timestamptz, -- Fecha hasta la que el anuncio está potenciado
+  slug text NOT NULL UNIQUE
 );
-create index idx_ads_user_id on public.ads(user_id);
-create index idx_ads_status on public.ads(status);
-create index idx_ads_slug on public.ads(slug);
-comment on table public.ads is 'Almacena todos los anuncios clasificados creados por los usuarios.';
+
+COMMENT ON TABLE public.ads IS 'Almacena los anuncios clasificados.';
 
 
--- Tabla para almacenar imágenes y videos de los anuncios.
-create table public.ad_media (
-    id bigserial primary key,
-    ad_id bigint not null references public.ads on delete cascade,
-    user_id uuid not null references public.profiles on delete cascade,
-    url text not null,
-    type public.ad_media_type not null default 'image',
-    is_cover boolean not null default false,
-    created_at timestamptz not null default now()
+-- 7. Tabla de Multimedia de Anuncios (public.ad_media)
+-- Almacena hasta 5 imágenes o videos por anuncio.
+
+CREATE TABLE public.ad_media (
+  id BIGSERIAL PRIMARY KEY,
+  ad_id BIGINT NOT NULL REFERENCES public.ads(id) ON DELETE CASCADE,
+  user_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  url text NOT NULL,
+  type ad_media_type NOT NULL,
+  is_cover boolean NOT NULL DEFAULT false,
+  created_at timestamptz NOT NULL DEFAULT now()
 );
-create index idx_ad_media_ad_id on public.ad_media(ad_id);
-comment on table public.ad_media is 'Medios (imágenes/videos) asociados a cada anuncio.';
+
+COMMENT ON TABLE public.ad_media IS 'Almacena imágenes y videos asociados a un anuncio.';
 
 
--- Tabla para calificaciones de anuncios.
-create table public.ratings (
-    id bigserial primary key,
-    ad_id bigint not null references public.ads on delete cascade,
-    user_id uuid not null references public.profiles on delete cascade,
-    rating smallint not null check (rating >= 1 and rating <= 5),
-    created_at timestamptz not null default now(),
-    -- Un usuario solo puede calificar un anuncio una vez.
-    unique (ad_id, user_id)
+-- 8. Tabla de Calificaciones (public.ratings)
+
+CREATE TABLE public.ratings (
+  id BIGSERIAL PRIMARY KEY,
+  ad_id BIGINT NOT NULL REFERENCES public.ads(id) ON DELETE CASCADE,
+  user_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  rating smallint NOT NULL CHECK (rating >= 1 AND rating <= 5),
+  created_at timestamptz NOT NULL DEFAULT now(),
+  UNIQUE(ad_id, user_id) -- Un usuario solo puede calificar un anuncio una vez.
 );
-comment on table public.ratings is 'Calificaciones (1-5 estrellas) de los usuarios para los anuncios.';
+
+COMMENT ON TABLE public.ratings IS 'Almacena las calificaciones de los anuncios.';
 
 
--- Tabla para comentarios en los anuncios.
-create table public.comments (
-    id bigserial primary key,
-    ad_id bigint not null references public.ads on delete cascade,
-    user_id uuid not null references public.profiles on delete cascade,
-    content text not null,
-    status public.comment_status not null default 'pending',
-    created_at timestamptz not null default now()
+-- 9. Tabla de Comentarios (public.comments)
+
+CREATE TABLE public.comments (
+  id BIGSERIAL PRIMARY KEY,
+  ad_id BIGINT NOT NULL REFERENCES public.ads(id) ON DELETE CASCADE,
+  user_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  comment text NOT NULL,
+  status comment_status NOT NULL DEFAULT 'pending',
+  created_at timestamptz NOT NULL DEFAULT now()
 );
-comment on table public.comments is 'Comentarios de los usuarios en los anuncios, con moderación.';
+
+COMMENT ON TABLE public.comments IS 'Almacena los comentarios de los usuarios en los anuncios.';
 
 
--- Tabla para transacciones de anuncios potenciados.
-create table public.boost_transactions (
-    id bigserial primary key,
-    ad_id bigint not null references public.ads on delete cascade,
-    user_id uuid not null references public.profiles on delete cascade,
-    boost_duration_days integer not null,
-    payment_id text, -- ID de la transacción del proveedor de pagos (ej. Stripe)
-    created_at timestamptz not null default now()
+-- 10. Tabla de Transacciones de Potenciación (public.boost_transactions)
+
+CREATE TABLE public.boost_transactions (
+  id BIGSERIAL PRIMARY KEY,
+  ad_id BIGINT NOT NULL REFERENCES public.ads(id) ON DELETE CASCADE,
+  user_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  duration_days INTEGER NOT NULL,
+  transaction_date timestamptz NOT NULL DEFAULT now(),
+  payment_id text -- ID de la transacción del proveedor de pago (Ej: Stripe)
 );
-comment on table public.boost_transactions is 'Registro de pagos para potenciar anuncios.';
+
+COMMENT ON TABLE public.boost_transactions IS 'Registra las transacciones de potenciación de anuncios.';
 
 
--- =================================================================
--- 3. FUNCIÓN Y TRIGGER PARA CREACIÓN DE PERFILES
--- Automatiza la creación de un perfil cuando un usuario se registra.
--- =================================================================
+-- 11. Trigger para Creación de Perfiles
+-- Esta función se ejecuta automáticamente cuando un nuevo usuario se registra.
 
-create or replace function public.handle_new_user()
-returns trigger
-language plpgsql
-security definer set search_path = public
-as $$
-begin
-  insert into public.profiles (id, full_name, username, role)
-  values (
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER SET search_path = public
+AS $$
+BEGIN
+  INSERT INTO public.profiles (id, full_name, username, role)
+  VALUES (
     new.id,
     new.raw_user_meta_data->>'full_name',
     new.raw_user_meta_data->>'username',
     (new.raw_user_meta_data->>'role')::public.user_role
   );
-  return new;
-end;
+  RETURN new;
+END;
 $$;
 
--- Disparador que ejecuta la función después de que se crea un usuario en `auth.users`.
-create trigger on_auth_user_created
-  after insert on auth.users
-  for each row execute procedure public.handle_new_user();
+-- Crear el trigger que llama a la función
+CREATE TRIGGER on_auth_user_created
+  AFTER INSERT ON auth.users
+  FOR EACH ROW EXECUTE PROCEDURE public.handle_new_user();
 
 
--- =================================================================
--- 4. CONFIGURACIÓN DEL ALMACENAMIENTO (STORAGE)
--- Creación de buckets para almacenar archivos.
--- =================================================================
+-- 12. Configuración de Almacenamiento (Storage)
 
--- Bucket para los avatares de los usuarios.
-insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
-values ('avatars', 'avatars', true, 5242880, '{"image/jpeg","image/png","image/webp"}')
-on conflict (id) do nothing;
+-- Crear bucket para avatares
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('avatars', 'avatars', true)
+ON CONFLICT (id) DO NOTHING;
 
--- Bucket para imágenes y videos de los anuncios.
-insert into storage.buckets (id, name, public, file_size_limit)
-values ('ad_media', 'ad_media', true, 52428800) -- 50MB
-on conflict (id) do nothing;
+-- Crear bucket para multimedia de anuncios
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('ad_media', 'ad_media', true)
+ON CONFLICT (id) DO NOTHING;
 
 
--- =================================================================
--- 5. POLÍTICAS DE SEGURIDAD A NIVEL DE FILA (RLS)
--- Asegura que los usuarios solo puedan acceder a los datos que les corresponden.
--- =================================================================
+-- 13. Políticas de Seguridad a Nivel de Fila (RLS)
 
--- --- Policies para la tabla `profiles` ---
-alter table public.profiles enable row level security;
+-- RLS para perfiles (profiles)
+ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 
--- Los usuarios pueden ver todos los perfiles.
-create policy "Public profiles are viewable by everyone."
-  on public.profiles for select
-  using ( true );
+CREATE POLICY "Los perfiles son públicos"
+ON public.profiles FOR SELECT USING (true);
 
--- Los usuarios solo pueden insertar o actualizar su propio perfil.
-create policy "Users can insert or update their own profile."
-  on public.profiles for update
-  using ( auth.uid() = id );
+CREATE POLICY "Los usuarios pueden actualizar su propio perfil"
+ON public.profiles FOR UPDATE
+USING (auth.uid() = id)
+WITH CHECK (auth.uid() = id);
 
 
--- --- Policies para la tabla `ads` ---
-alter table public.ads enable row level security;
+-- RLS para anuncios (ads)
+ALTER TABLE public.ads ENABLE ROW LEVEL SECURITY;
 
--- Todos pueden ver los anuncios activos.
-create policy "Active ads are viewable by everyone."
-  on public.ads for select
-  using ( status = 'active' );
+CREATE POLICY "Los anuncios activos son públicos"
+ON public.ads FOR SELECT USING (status = 'active');
 
--- Los anunciantes pueden ver sus propios anuncios, sin importar el estado.
-create policy "Advertisers can view their own ads."
-  on public.ads for select
-  using ( auth.uid() = user_id );
+CREATE POLICY "Los anunciantes pueden ver sus propios anuncios inactivos/borrador"
+ON public.ads FOR SELECT
+USING (auth.uid() = user_id);
 
--- Los anunciantes pueden crear anuncios.
-create policy "Advertisers can create ads."
-  on public.ads for insert
-  with check ( auth.uid() = user_id and (select role from public.profiles where id = auth.uid()) = 'ADVERTISER' );
+CREATE POLICY "Los anunciantes pueden crear anuncios"
+ON public.ads FOR INSERT
+WITH CHECK (
+  auth.uid() = user_id AND
+  (SELECT role FROM public.profiles WHERE id = auth.uid()) = 'ADVERTISER'
+);
 
--- Los anunciantes solo pueden actualizar sus propios anuncios.
-create policy "Advertisers can update their own ads."
-  on public.ads for update
-  using ( auth.uid() = user_id );
+CREATE POLICY "Los anunciantes pueden actualizar sus propios anuncios"
+ON public.ads FOR UPDATE
+USING (auth.uid() = user_id)
+WITH CHECK (auth.uid() = user_id);
 
--- Los anunciantes solo pueden eliminar sus propios anuncios.
-create policy "Advertisers can delete their own ads."
-  on public.ads for delete
-  using ( auth.uid() = user_id );
+CREATE POLICY "Los anunciantes pueden eliminar sus propios anuncios"
+ON public.ads FOR DELETE
+USING (auth.uid() = user_id);
 
 
--- --- Policies para la tabla `ad_media` ---
-alter table public.ad_media enable row level security;
+-- RLS para multimedia de anuncios (ad_media)
+ALTER TABLE public.ad_media ENABLE ROW LEVEL SECURITY;
 
--- Todos pueden ver los medios de los anuncios.
-create policy "Ad media is viewable by everyone."
-  on public.ad_media for select
-  using ( true );
+CREATE POLICY "Cualquiera puede ver la multimedia de anuncios activos"
+ON public.ad_media FOR SELECT USING (
+  ad_id IN (SELECT id FROM public.ads WHERE status = 'active')
+);
 
--- Los anunciantes pueden subir medios para sus propios anuncios.
-create policy "Advertisers can insert media for their own ads."
-  on public.ad_media for insert
-  with check ( auth.uid() = user_id );
+CREATE POLICY "Los anunciantes pueden ver la multimedia de sus propios anuncios"
+ON public.ad_media FOR SELECT USING (auth.uid() = user_id);
 
--- Los anunciantes solo pueden eliminar medios de sus propios anuncios.
-create policy "Advertisers can delete their own media."
-  on public.ad_media for delete
-  using ( auth.uid() = user_id );
+CREATE POLICY "Los anunciantes pueden insertar multimedia en sus anuncios"
+ON public.ad_media FOR INSERT WITH CHECK (auth.uid() = user_id);
 
+CREATE POLICY "Los anunciantes pueden actualizar la multimedia de sus anuncios"
+ON public.ad_media FOR UPDATE USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
 
--- --- Policies para la tabla `ratings` ---
-alter table public.ratings enable row level security;
-
--- Todos pueden ver las calificaciones.
-create policy "Ratings are viewable by everyone."
-  on public.ratings for select
-  using ( true );
-
--- Los usuarios autenticados pueden crear calificaciones.
-create policy "Authenticated users can create ratings."
-  on public.ratings for insert
-  with check ( auth.uid() = user_id );
-
--- Los usuarios solo pueden actualizar su propia calificación.
-create policy "Users can update their own rating."
-  on public.ratings for update
-  using ( auth.uid() = user_id );
+CREATE POLICY "Los anunciantes pueden eliminar la multimedia de sus anuncios"
+ON public.ad_media FOR DELETE USING (auth.uid() = user_id);
 
 
--- --- Policies para la tabla `comments` ---
-alter table public.comments enable row level security;
+-- RLS para calificaciones (ratings)
+ALTER TABLE public.ratings ENABLE ROW LEVEL SECURITY;
 
--- Todos pueden ver los comentarios aprobados.
-create policy "Everyone can view approved comments."
-  on public.comments for select
-  using ( status = 'approved' );
+CREATE POLICY "Las calificaciones son públicas"
+ON public.ratings FOR SELECT USING (true);
 
--- Los anunciantes pueden ver todos los comentarios de sus propios anuncios.
-create policy "Advertisers can view all comments on their ads."
-  on public.comments for select
-  using ( auth.uid() = (select user_id from ads where id = comments.ad_id) );
+CREATE POLICY "Los usuarios autenticados pueden calificar"
+ON public.ratings FOR INSERT
+WITH CHECK (
+  auth.uid() = user_id AND
+  -- Un anunciante no puede calificar su propio anuncio
+  user_id <> (SELECT user_id FROM public.ads WHERE id = ad_id)
+);
 
--- Los usuarios autenticados pueden crear comentarios.
-create policy "Authenticated users can insert comments."
-  on public.comments for insert
-  with check ( auth.uid() = user_id );
-
--- Los anunciantes pueden moderar (actualizar el estado) de los comentarios en sus anuncios.
-create policy "Advertisers can moderate comments on their ads."
-  on public.comments for update
-  using ( auth.uid() = (select user_id from ads where id = comments.ad_id) );
-
--- Los usuarios pueden eliminar sus propios comentarios.
-create policy "Users can delete their own comments."
-  on public.comments for delete
-  using ( auth.uid() = user_id );
+CREATE POLICY "Los usuarios pueden actualizar su propia calificación"
+ON public.ratings FOR UPDATE
+USING (auth.uid() = user_id)
+WITH CHECK (auth.uid() = user_id);
 
 
--- --- Policies para `locations` y `categories` ---
-alter table public.locations enable row level security;
-alter table public.categories enable row level security;
+-- RLS para comentarios (comments)
+ALTER TABLE public.comments ENABLE ROW LEVEL SECURITY;
 
--- Todos pueden ver las ubicaciones y categorías.
-create policy "Locations and categories are viewable by everyone."
-  on public.locations for select using ( true );
-create policy "Categories are viewable by everyone."
-  on public.categories for select using ( true );
+CREATE POLICY "Los comentarios aprobados son públicos"
+ON public.comments FOR SELECT USING (status = 'approved');
+
+CREATE POLICY "Los usuarios pueden ver sus propios comentarios pendientes"
+ON public.comments FOR SELECT USING (auth.uid() = user_id);
+
+CREATE POLICY "El anunciante puede ver todos los comentarios en sus anuncios"
+ON public.comments FOR SELECT USING (
+  auth.uid() = (SELECT user_id FROM public.ads WHERE id = ad_id)
+);
+
+CREATE POLICY "Los usuarios autenticados pueden comentar"
+ON public.comments FOR INSERT
+WITH CHECK (
+  auth.uid() = user_id AND
+  -- Un anunciante no puede comentar su propio anuncio
+  user_id <> (SELECT user_id FROM public.ads WHERE id = ad_id)
+);
+
+CREATE POLICY "El anunciante puede moderar los comentarios en sus anuncios"
+ON public.comments FOR UPDATE
+USING (auth.uid() = (SELECT user_id FROM public.ads WHERE id = ad_id))
+WITH CHECK (auth.uid() = (SELECT user_id FROM public.ads WHERE id = ad_id));
+
+CREATE POLICY "Los usuarios pueden eliminar sus propios comentarios"
+ON public.comments FOR DELETE USING (auth.uid() = user_id);
 
 
--- --- Policies para el bucket `avatars` en Storage ---
-create policy "Avatar images are publicly accessible."
-  on storage.objects for select
-  using ( bucket_id = 'avatars' );
+-- RLS para transacciones de potenciación (boost_transactions)
+ALTER TABLE public.boost_transactions ENABLE ROW LEVEL SECURITY;
 
-create policy "Anyone can upload an avatar."
-  on storage.objects for insert
-  with check ( bucket_id = 'avatars' );
+CREATE POLICY "Los usuarios solo pueden ver sus propias transacciones"
+ON public.boost_transactions FOR SELECT USING (auth.uid() = user_id);
 
-create policy "Anyone can update their own avatar."
-  on storage.objects for update
-  using ( auth.uid() = owner )
-  with check ( bucket_id = 'avatars' );
+CREATE POLICY "Los anunciantes pueden crear transacciones para sus anuncios"
+ON public.boost_transactions FOR INSERT
+WITH CHECK (
+  auth.uid() = user_id AND
+  user_id = (SELECT user_id FROM public.ads WHERE id = ad_id)
+);
 
 
--- --- Policies para el bucket `ad_media` en Storage ---
-create policy "Ad media are publicly accessible."
-  on storage.objects for select
-  using ( bucket_id = 'ad_media' );
+-- RLS para almacenamiento (Storage)
 
-create policy "Advertisers can upload ad media."
-  on storage.objects for insert
-  with check ( bucket_id = 'ad_media' and (select role from public.profiles where id = auth.uid()) = 'ADVERTISER' );
+-- Políticas para avatares
+CREATE POLICY "Los avatares son públicos"
+ON storage.objects FOR SELECT
+USING (bucket_id = 'avatars');
 
-create policy "Advertisers can update their own ad media."
-  on storage.objects for update
-  using ( auth.uid() = owner )
-  with check ( bucket_id = 'ad_media' );
+CREATE POLICY "Los usuarios pueden subir/actualizar su propio avatar"
+ON storage.objects FOR INSERT
+WITH CHECK (bucket_id = 'avatars' AND auth.uid() = (storage.foldername(name))[1]::uuid);
 
-create policy "Advertisers can delete their own ad media."
-  on storage.objects for delete
-  using ( auth.uid() = owner )
-  with check ( bucket_id = 'ad_media' );
+CREATE POLICY "Los usuarios pueden actualizar su propio avatar (update)"
+ON storage.objects FOR UPDATE
+USING (bucket_id = 'avatars' AND auth.uid() = (storage.foldername(name))[1]::uuid)
+WITH CHECK (bucket_id = 'avatars' AND auth.uid() = (storage.foldername(name))[1]::uuid);
+
+
+-- Políticas para multimedia de anuncios
+CREATE POLICY "La multimedia de anuncios es pública"
+ON storage.objects FOR SELECT
+USING (bucket_id = 'ad_media');
+
+CREATE POLICY "Los anunciantes pueden subir multimedia a sus anuncios"
+ON storage.objects FOR INSERT
+WITH CHECK (bucket_id = 'ad_media' AND auth.uid() = (storage.foldername(name))[1::uuid]);
+
+CREATE POLICY "Los anunciantes pueden actualizar su multimedia"
+ON storage.objects FOR UPDATE
+USING (bucket_id = 'ad_media' AND auth.uid() = (storage.foldername(name))[1::uuid])
+WITH CHECK (bucket_id = 'ad_media' AND auth.uid() = (storage.foldername(name))[1::uuid]);
+
+CREATE POLICY "Los anunciantes pueden eliminar su multimedia"
+ON storage.objects FOR DELETE
+USING (bucket_id = 'ad_media' AND auth.uid() = (storage.foldername(name))[1::uuid]);
