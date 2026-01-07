@@ -11,6 +11,18 @@ const ACCEPTED_MEDIA_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/web
 
 const fileSchema = z.instanceof(File).refine(file => file.size > 0, "El archivo no puede estar vacío.");
 
+// Define the array schema with all its validations first.
+const mediaSchema = z.array(fileSchema)
+  .min(1, 'Debes subir al menos una imagen o video.')
+  .max(5, 'Puedes subir un máximo de 5 archivos.')
+  .refine(files => files.every(file => file.size <= MAX_FILE_SIZE), `Cada archivo debe pesar menos de 50MB.`)
+  .refine(files => files.every(file => ACCEPTED_MEDIA_TYPES.includes(file.type)), "Solo se aceptan formatos de imagen (JPG, PNG, WEBP) y video (MP4, MOV).")
+  .refine(files => {
+    const videoCount = files.filter(file => file.type.startsWith('video/')).length;
+    return videoCount <= 1;
+  }, 'Solo puedes subir un video por anuncio.');
+
+
 const adSchema = z.object({
   title: z.string().min(3, 'El título debe tener al menos 3 caracteres.'),
   description: z.string().min(10, 'La descripción debe tener al menos 10 caracteres.'),
@@ -18,18 +30,11 @@ const adSchema = z.object({
   country_id: z.coerce.number().int().positive('Debes seleccionar un país.'),
   region_id: z.coerce.number().int().positive('Debes seleccionar una región.'),
   subregion_id: z.coerce.number().int().optional(),
+  // Now, use preprocess with the fully defined mediaSchema.
   media: z.preprocess((arg) => {
     if (arg === undefined || arg === null) return [];
     return Array.isArray(arg) ? arg : [arg];
-  }, z.array(fileSchema))
-    .min(1, 'Debes subir al menos una imagen o video.')
-    .max(5, 'Puedes subir un máximo de 5 archivos.')
-    .refine(files => files.every(file => file.size <= MAX_FILE_SIZE), `Cada archivo debe pesar menos de 50MB.`)
-    .refine(files => files.every(file => ACCEPTED_MEDIA_TYPES.includes(file.type)), "Solo se aceptan formatos de imagen (JPG, PNG, WEBP) y video (MP4, MOV).")
-    .refine(files => {
-      const videoCount = files.filter(file => file.type.startsWith('video/')).length;
-      return videoCount <= 1;
-    }, 'Solo puedes subir un video por anuncio.'),
+  }, mediaSchema),
   cover_image_index: z.coerce.number().int().min(0).max(4),
 });
 
