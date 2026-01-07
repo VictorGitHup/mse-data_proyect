@@ -101,7 +101,7 @@ export default function AdView({ ad }: AdViewProps) {
             <CardContent>
               {/* Cover Media */}
               {coverMedia ? (
-                <div className="relative w-full aspect-video rounded-lg overflow-hidden bg-muted mb-6">
+                <div className="relative w-full aspect-square lg:aspect-video rounded-lg overflow-hidden bg-muted mb-6">
                   <Image
                     src={coverMedia.url}
                     alt={ad.title}
@@ -112,7 +112,7 @@ export default function AdView({ ad }: AdViewProps) {
                   />
                 </div>
               ) : (
-                <div className="w-full aspect-video rounded-lg bg-muted flex items-center justify-center text-muted-foreground mb-6">
+                <div className="w-full aspect-square lg:aspect-video rounded-lg bg-muted flex items-center justify-center text-muted-foreground mb-6">
                   <span>Sin imagen de portada</span>
                 </div>
               )}
@@ -128,7 +128,7 @@ export default function AdView({ ad }: AdViewProps) {
                   <h3 className="text-2xl font-bold mb-4">Galería</h3>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     {otherMedia.map(media => (
-                      <div key={media.id} className="relative w-full aspect-video rounded-lg overflow-hidden bg-muted">
+                      <div key={media.id} className="relative w-full aspect-square lg:aspect-video rounded-lg overflow-hidden bg-muted">
                         {media.type === 'image' ? (
                           <Image
                             src={media.url}
@@ -239,3 +239,4 @@ export default function AdView({ ad }: AdViewProps) {
     </div>
   );
 }
+
