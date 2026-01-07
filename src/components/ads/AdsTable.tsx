@@ -19,7 +19,7 @@ import { AdForTable } from '@/lib/types';
 import { format, isFuture } from 'date-fns';
 import { es } from 'date-fns/locale';
 import Link from 'next/link';
-import { Eye, Edit, Rocket } from 'lucide-react';
+import { Eye, Edit, Rocket, BarChart2, MessageSquare, MousePointerClick } from 'lucide-react';
 import {
   Tooltip,
   TooltipContent,
@@ -108,7 +108,7 @@ export default function AdsTable({ ads, setAds }: AdsTableProps) {
           <TableHeader>
             <TableRow>
               <TableHead>Título</TableHead>
-              <TableHead className="hidden md:table-cell">Categoría</TableHead>
+              <TableHead className="hidden lg:table-cell">Estadísticas</TableHead>
               <TableHead className="hidden sm:table-cell">Creado</TableHead>
               <TableHead>Estado</TableHead>
               <TableHead className="text-right">Acciones</TableHead>
@@ -119,14 +119,43 @@ export default function AdsTable({ ads, setAds }: AdsTableProps) {
               const isBoosted = ad.boosted_until && isFuture(new Date(ad.boosted_until));
               return (
               <TableRow key={ad.id} className={isBoosted ? 'bg-yellow-50/50' : ''}>
-                <TableCell className="font-medium truncate max-w-xs flex items-center gap-2">
-                   {isBoosted && <Rocket className="h-4 w-4 text-yellow-500" />}
-                  {ad.title}
+                <TableCell className="font-medium truncate max-w-[200px] sm:max-w-xs">
+                    <div className="flex items-center gap-2">
+                        {isBoosted && <Rocket className="h-4 w-4 text-yellow-500 shrink-0" />}
+                        <span className="truncate">{ad.title}</span>
+                    </div>
+                    <div className="text-xs text-muted-foreground hidden sm:inline lg:hidden">
+                        {ad.category?.name || 'N/A'}
+                    </div>
                 </TableCell>
-                <TableCell className="hidden md:table-cell">{ad.category?.name || 'N/A'}</TableCell>
+
+                <TableCell className="hidden lg:table-cell">
+                    <div className="flex items-center gap-3 text-muted-foreground text-xs">
+                        <Tooltip>
+                            <TooltipTrigger className="flex items-center gap-1">
+                                <Eye className="h-3.5 w-3.5" /> {ad.view_count}
+                            </TooltipTrigger>
+                            <TooltipContent><p>Vistas del Anuncio</p></TooltipContent>
+                        </Tooltip>
+                        <Tooltip>
+                            <TooltipTrigger className="flex items-center gap-1">
+                                <MousePointerClick className="h-3.5 w-3.5" /> {ad.contact_click_count}
+                            </TooltipTrigger>
+                            <TooltipContent><p>Clics en Contacto</p></TooltipContent>
+                        </Tooltip>
+                        <Tooltip>
+                            <TooltipTrigger className="flex items-center gap-1">
+                                <MessageSquare className="h-3.5 w-3.5" /> {ad.comments_count}
+                            </TooltipTrigger>
+                            <TooltipContent><p>Comentarios Recibidos</p></TooltipContent>
+                        </Tooltip>
+                    </div>
+                </TableCell>
+                
                 <TableCell className="hidden sm:table-cell">
                   {format(new Date(ad.created_at), 'dd MMM yyyy', { locale: es })}
                 </TableCell>
+
                 <TableCell>
                   <Badge variant={getStatusVariant(ad.status)} className="capitalize">
                     {getStatusText(ad.status)}

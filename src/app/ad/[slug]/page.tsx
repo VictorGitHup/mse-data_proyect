@@ -43,6 +43,9 @@ export default async function AdPage({ params }: { params: { slug: string } }) {
     notFound();
   }
 
+  // Increment view count via RPC
+  await supabase.rpc('increment_ad_view', { ad_id_to_inc: ad.id });
+
   // Fetch related data in parallel
   const [similarAds, ratingData, commentsData, userRatingData] = await Promise.all([
     getSimilarAds({

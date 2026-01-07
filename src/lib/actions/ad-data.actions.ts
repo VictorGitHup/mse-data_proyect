@@ -21,7 +21,10 @@ export async function getAdsForAdvertiser(query: string, status: string) {
       status,
       slug,
       boosted_until,
-      category:categories(name)
+      view_count,
+      contact_click_count,
+      category:categories(name),
+      comments_count:ad_comments(count)
     `)
     .eq('user_id', user.id)
     .order('created_at', { ascending: false });
@@ -36,7 +39,14 @@ export async function getAdsForAdvertiser(query: string, status: string) {
 
   const { data, error } = await queryBuilder;
 
-  return { data, error: error?.message };
+  // Supabase returns the count as an array with an object, e.g., [{ count: 5 }]
+  // We need to flatten this for easier use in the component.
+  const adsWithFlattenedComments = data?.map(ad => ({
+    ...ad,
+    comments_count: (ad.comments_count as unknown as [{ count: number }])[0].count,
+  }));
+
+  return { data: adsWithFlattenedComments, error: error?.message };
 }
 
 export async function getSimilarAds({

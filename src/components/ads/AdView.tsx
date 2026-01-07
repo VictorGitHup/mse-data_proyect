@@ -1,4 +1,3 @@
-
 'use client';
 
 import Image from "next/image";
@@ -19,6 +18,7 @@ import type { AdWithRelations, AdForCard, AdCommentWithProfile } from "@/lib/typ
 import AdCard from "./AdCard";
 import CommentSection from "./ratings/CommentSection";
 import { isFuture } from "date-fns";
+import { trackContactClick } from "@/lib/actions/track-click.action";
 
 interface AdViewProps {
   ad: AdWithRelations;
@@ -50,6 +50,11 @@ export default function AdView({
     setRatingCount(newCount);
   };
   
+  const handleContactClick = () => {
+    // Fire-and-forget server action to track the click
+    trackContactClick(ad.id);
+  };
+
   const fullWhatsappNumber = (advertiserCountry?.phone_code && advertiser.contact_whatsapp)
     ? `${advertiserCountry.phone_code}${advertiser.contact_whatsapp}`.replace(/\D/g, '')
     : null;
@@ -245,28 +250,28 @@ export default function AdView({
               </CardHeader>
               <CardContent className="flex flex-col gap-3">
                 {advertiser.contact_email && (
-                  <Button asChild className="w-full" variant="outline">
+                  <Button asChild className="w-full" variant="outline" onClick={handleContactClick}>
                     <a href={`mailto:${advertiser.contact_email}`}>
                       <Mail className="mr-2" /> Email
                     </a>
                   </Button>
                 )}
                 {fullWhatsappNumber && (
-                  <Button asChild className="w-full bg-green-500 hover:bg-green-600 text-white">
+                  <Button asChild className="w-full bg-green-500 hover:bg-green-600 text-white" onClick={handleContactClick}>
                     <a href={`https://wa.me/${fullWhatsappNumber}`} target="_blank" rel="noopener noreferrer">
                       <Phone className="mr-2" /> WhatsApp
                     </a>
                   </Button>
                 )}
                 {advertiser.contact_telegram && (
-                   <Button asChild className="w-full bg-blue-500 hover:bg-blue-600 text-white">
+                   <Button asChild className="w-full bg-blue-500 hover:bg-blue-600 text-white" onClick={handleContactClick}>
                     <a href={`https://t.me/${advertiser.contact_telegram.replace('@', '')}`} target="_blank" rel="noopener noreferrer">
                       <Send className="mr-2" /> Telegram
                     </a>
                   </Button>
                 )}
                 {advertiser.contact_social_url && (
-                  <Button asChild className="w-full" variant="secondary">
+                  <Button asChild className="w-full" variant="secondary" onClick={handleContactClick}>
                     <a href={advertiser.contact_social_url} target="_blank" rel="noopener noreferrer">
                       <LinkIcon className="mr-2" /> Perfil Social
                     </a>
@@ -285,28 +290,28 @@ export default function AdView({
        {hasContactInfo && (
          <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-background border-t p-2 flex justify-around items-center z-50">
               {advertiser.contact_email && (
-                <Button asChild size="icon" variant="outline">
+                <Button asChild size="icon" variant="outline" onClick={handleContactClick}>
                   <a href={`mailto:${advertiser.contact_email}`} aria-label="Email">
                     <Mail />
                   </a>
                 </Button>
               )}
               {fullWhatsappNumber && (
-                <Button asChild size="icon" className="bg-green-500 hover:bg-green-600 text-white">
+                <Button asChild size="icon" className="bg-green-500 hover:bg-green-600 text-white" onClick={handleContactClick}>
                   <a href={`https://wa.me/${fullWhatsappNumber}`} target="_blank" rel="noopener noreferrer" aria-label="WhatsApp">
                     <Phone />
                   </a>
                 </Button>
               )}
               {advertiser.contact_telegram && (
-                 <Button asChild size="icon" className="bg-blue-500 hover:bg-blue-600 text-white">
+                 <Button asChild size="icon" className="bg-blue-500 hover:bg-blue-600 text-white" onClick={handleContactClick}>
                   <a href={`https://t.me/${advertiser.contact_telegram.replace('@', '')}`} target="_blank" rel="noopener noreferrer" aria-label="Telegram">
                     <Send />
                   </a>
                 </Button>
               )}
               {advertiser.contact_social_url && (
-                <Button asChild size="icon" variant="secondary">
+                <Button asChild size="icon" variant="secondary" onClick={handleContactClick}>
                   <a href={advertiser.contact_social_url} target="_blank" rel="noopener noreferrer" aria-label="Perfil Social">
                     <LinkIcon />
                   </a>

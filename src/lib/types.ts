@@ -15,6 +15,8 @@ export type Ad = {
   boosted_until: string | null;
   slug: string;
   tags: string[] | null;
+  view_count: number;
+  contact_click_count: number;
 };
 
 export type AdMedia = {
@@ -89,8 +91,9 @@ export type AdWithMedia = Ad & {
   ad_media: AdMedia[] | null;
 };
 
-export type AdForTable = Pick<Ad, 'id' | 'title' | 'created_at' | 'status' | 'slug' | 'boosted_until'> & {
+export type AdForTable = Pick<Ad, 'id' | 'title' | 'created_at' | 'status' | 'slug' | 'boosted_until' | 'view_count' | 'contact_click_count'> & {
   category: { name: string } | null;
+  comments_count: number;
 };
 
 export type AdForCard = Pick<Ad, 'id' | 'title' | 'slug' | 'tags' | 'boosted_until'> & {
