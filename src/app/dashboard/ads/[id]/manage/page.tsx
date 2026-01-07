@@ -11,7 +11,7 @@ import {
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Terminal } from "lucide-react";
 import EditAdForm from "@/components/ads/EditAdForm";
-import type { Ad } from "@/lib/types";
+import type { AdWithMedia } from "@/lib/types";
 
 export default async function ManageAdPage({ params, searchParams }: { params: { id: string }, searchParams: { error?: string } }) {
   const supabase = await createSupabaseServerClient();
@@ -29,10 +29,10 @@ export default async function ManageAdPage({ params, searchParams }: { params: {
 
   const { data: ad, error } = await supabase
     .from('ads')
-    .select('*')
+    .select('*, ad_media(*)')
     .eq('id', adId)
     .eq('user_id', user.id)
-    .single<Ad>();
+    .single<AdWithMedia>();
   
   if (error || !ad) {
     console.error("Error fetching ad for editing or ad not found:", error);
@@ -40,14 +40,13 @@ export default async function ManageAdPage({ params, searchParams }: { params: {
     return redirect('/dashboard?error=Anuncio no encontrado o no tienes permiso para editarlo.');
   }
 
-  // The EditAdForm now takes the simplified Ad object
   return (
     <div className="container mx-auto p-4 md:p-8 flex justify-center">
        <Card className="w-full max-w-2xl">
         <CardHeader>
           <CardTitle>Editar Anuncio</CardTitle>
           <CardDescription>
-            Modifica los campos que desees y guarda los cambios.
+            Modifica los campos, gestiona las imágenes y videos, y guarda los cambios.
           </CardDescription>
         </CardHeader>
         <CardContent>

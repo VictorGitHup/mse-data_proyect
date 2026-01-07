@@ -60,6 +60,10 @@ export type AdWithRelations = Ad & {
   ad_media: Pick<AdMedia, 'id' | 'url' | 'is_cover' | 'type'>[] | null;
 };
 
+export type AdWithMedia = Ad & {
+  ad_media: AdMedia[] | null;
+};
+
 export type AdForTable = Pick<Ad, 'id' | 'title' | 'created_at' | 'status' | 'slug'> & {
   category: { name: string } | null;
 };
