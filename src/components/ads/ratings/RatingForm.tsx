@@ -20,11 +20,12 @@ type RatingFormValues = z.infer<typeof ratingSchema>;
 interface RatingFormProps {
   adId: number;
   onNewRating: (newAverage: number, newCount: number) => void;
+  initialRating: number;
 }
 
-export default function RatingForm({ adId, onNewRating }: RatingFormProps) {
+export default function RatingForm({ adId, onNewRating, initialRating }: RatingFormProps) {
   const [hoverRating, setHoverRating] = useState(0);
-  const [currentRating, setCurrentRating] = useState(0);
+  const [currentRating, setCurrentRating] = useState(initialRating);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
 
@@ -50,7 +51,9 @@ export default function RatingForm({ adId, onNewRating }: RatingFormProps) {
 
   return (
     <div className="space-y-2">
-      <h3 className="font-semibold">Califica este anuncio</h3>
+      <h3 className="font-semibold">
+        {initialRating > 0 ? "Actualiza tu calificación" : "Califica este anuncio"}
+      </h3>
       <div className="flex items-center gap-1">
         {[1, 2, 3, 4, 5].map((star) => (
           <Star

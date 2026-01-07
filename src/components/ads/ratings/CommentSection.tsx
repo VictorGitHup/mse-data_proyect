@@ -16,6 +16,7 @@ interface CommentSectionProps {
   currentUser: User | null;
   initialComments: AdCommentWithProfile[];
   onNewRating: (newAverage: number, newCount: number) => void;
+  initialUserRating: number;
 }
 
 export default function CommentSection({ 
@@ -24,6 +25,7 @@ export default function CommentSection({
     currentUser, 
     initialComments,
     onNewRating,
+    initialUserRating
 }: CommentSectionProps) {
   const [comments, setComments] = useState(initialComments);
   const [showForm, setShowForm] = useState(false);
@@ -48,7 +50,11 @@ export default function CommentSection({
       {/* Show rating/comment form if user is logged in AND is not the owner */}
       {!isOwner && currentUser && (
         <div className="p-4 border rounded-lg bg-card space-y-4">
-          <RatingForm adId={adId} onNewRating={onNewRating} />
+          <RatingForm 
+            adId={adId} 
+            onNewRating={onNewRating}
+            initialRating={initialUserRating}
+          />
           <CommentForm adId={adId} onCommentSubmitted={() => setShowForm(false)} />
         </div>
       )}

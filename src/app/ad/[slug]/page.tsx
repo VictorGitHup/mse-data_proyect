@@ -3,11 +3,12 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
 import AdView from "@/components/ads/AdView";
 import { getSimilarAds } from "@/lib/actions/ad-data.actions";
-import { getRatings, getComments } from "@/lib/actions/ratings-comments.actions";
+import { getRatings, getComments, getUserRating } from "@/lib/actions/ratings-comments.actions";
 import type { AdCommentWithProfile } from "@/lib/types";
 
 export default async function AdPage({ params }: { params: { slug: string } }) {
   const supabase = await createSupabaseServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
 
   const { data: ad, error } = await supabase
     .from("ads")
@@ -43,7 +44,7 @@ export default async function AdPage({ params }: { params: { slug: string } }) {
   }
 
   // Fetch related data in parallel
-  const [similarAds, ratingData, commentsData] = await Promise.all([
+  const [similarAds, ratingData, commentsData, userRatingData] = await Promise.all([
     getSimilarAds({
       currentAdId: ad.id,
       categoryId: ad.category_id,
@@ -51,13 +52,13 @@ export default async function AdPage({ params }: { params: { slug: string } }) {
       tags: ad.tags,
     }),
     getRatings(ad.id),
-    getComments(ad.id)
+    getComments(ad.id),
+    user ? getUserRating(ad.id, user.id) : Promise.resolve({ data: null })
   ]);
   
   const { average: averageRating, count: ratingCount } = ratingData;
   const initialComments = commentsData.data as AdCommentWithProfile[] || [];
-
-  const { data: { user } } = await supabase.auth.getUser();
+  const initialUserRating = userRatingData.data?.rating || 0;
 
   // The 'any' type cast is a temporary workaround because Supabase's generated types
   // for related tables can be complex. We ensure data integrity through the query itself.
@@ -69,6 +70,7 @@ export default async function AdPage({ params }: { params: { slug: string } }) {
         initialRatingCount={ratingCount}
         initialComments={initialComments}
         currentUser={user}
+        initialUserRating={initialUserRating}
       />
   );
 }

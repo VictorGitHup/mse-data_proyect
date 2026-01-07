@@ -31,6 +31,23 @@ export async function getRatings(adId: number) {
   return { average, count: count ?? 0 };
 }
 
+export async function getUserRating(adId: number, userId: string) {
+    const supabase = createSupabaseServerActionClient();
+    const { data, error } = await supabase
+      .from('ad_ratings')
+      .select('rating')
+      .eq('ad_id', adId)
+      .eq('user_id', userId)
+      .single();
+
+    if (error && error.code !== 'PGRST116') { // PGRST116 = no rows found
+        console.error('Error fetching user rating:', error);
+        return { data: null, error: error.message };
+    }
+    
+    return { data, error: null };
+}
+
 
 export async function getComments(adId: number) {
   const supabase = createSupabaseServerActionClient();

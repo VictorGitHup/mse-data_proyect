@@ -25,6 +25,7 @@ interface AdViewProps {
   initialRatingCount: number;
   initialComments: AdCommentWithProfile[];
   currentUser: User | null;
+  initialUserRating: number;
 }
 
 export default function AdView({ 
@@ -34,6 +35,7 @@ export default function AdView({
   initialRatingCount,
   initialComments,
   currentUser,
+  initialUserRating,
 }: AdViewProps) {
   const advertiser = ad.profiles;
   const advertiserCountry = advertiser.country;
@@ -214,6 +216,7 @@ export default function AdView({
                     currentUser={currentUser}
                     initialComments={initialComments}
                     onNewRating={handleNewRating}
+                    initialUserRating={initialUserRating}
                   />
               </div>
 
