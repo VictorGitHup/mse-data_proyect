@@ -89,11 +89,11 @@ export type AdWithMedia = Ad & {
   ad_media: AdMedia[] | null;
 };
 
-export type AdForTable = Pick<Ad, 'id' | 'title' | 'created_at' | 'status' | 'slug'> & {
+export type AdForTable = Pick<Ad, 'id' | 'title' | 'created_at' | 'status' | 'slug' | 'boosted_until'> & {
   category: { name: string } | null;
 };
 
-export type AdForCard = Pick<Ad, 'id' | 'title' | 'slug' | 'tags'> & {
+export type AdForCard = Pick<Ad, 'id' | 'title' | 'slug' | 'tags' | 'boosted_until'> & {
   ad_media: { url: string }[];
   category: { name: string } | null;
   country: { name: string } | null;

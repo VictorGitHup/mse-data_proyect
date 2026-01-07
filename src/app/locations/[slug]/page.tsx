@@ -1,4 +1,3 @@
-
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
 import AdCard from "@/components/ads/AdCard";
@@ -46,6 +45,7 @@ export default async function LocationPage({ params, searchParams }: LocationPag
       tags,
       avg_rating,
       rating_count,
+      boosted_until,
       ad_media!inner(url, is_cover),
       category:categories(name),
       country:country_id(name)

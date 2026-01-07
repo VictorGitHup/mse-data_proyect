@@ -1,4 +1,3 @@
-
 import AdCard from "@/components/ads/AdCard";
 import AdFilters from "@/components/ads/AdFilters";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -77,6 +76,7 @@ export default async function Home({ searchParams }: HomePageProps) {
       tags,
       avg_rating,
       rating_count,
+      boosted_until,
       ad_media!inner(url, is_cover),
       category:categories(name),
       country:country_id(name)

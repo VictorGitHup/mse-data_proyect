@@ -1,8 +1,7 @@
-
 'use server';
 
 import { createSupabaseServerActionClient } from "@/lib/supabase/server";
-import { AdForCard } from "../types";
+import { AdForCard, AdForTable } from "../types";
 
 export async function getAdsForAdvertiser(query: string, status: string) {
   const supabase = createSupabaseServerActionClient();
@@ -21,6 +20,7 @@ export async function getAdsForAdvertiser(query: string, status: string) {
       created_at,
       status,
       slug,
+      boosted_until,
       category:categories(name)
     `)
     .eq('user_id', user.id)
@@ -51,6 +51,7 @@ export async function getSimilarAds({
   tags: string[] | null;
 }): Promise<AdForCard[]> {
   const supabase = createSupabaseServerActionClient();
+  const now = new Date().toISOString();
 
   // Base query
   let query = supabase
@@ -62,6 +63,7 @@ export async function getSimilarAds({
       tags,
       avg_rating,
       rating_count,
+      boosted_until,
       ad_media!inner(url, is_cover),
       category:categories(name),
       country:country_id(name)
@@ -69,6 +71,8 @@ export async function getSimilarAds({
     .eq("status", "active")
     .eq("ad_media.is_cover", true)
     .neq('id', currentAdId) // Exclude the current ad
+    .order("boosted_until", { ascending: false, nulls: "last" })
+    .order("created_at", { ascending: false })
     .limit(4);
 
   const filters = [];
@@ -105,6 +109,7 @@ export async function getSimilarAds({
         tags,
         avg_rating,
         rating_count,
+        boosted_until,
         ad_media!inner(url, is_cover),
         category:categories(name),
         country:country_id(name)
@@ -113,6 +118,8 @@ export async function getSimilarAds({
       .eq("ad_media.is_cover", true)
       .eq('category_id', categoryId)
       .neq('id', currentAdId)
+      .order("boosted_until", { ascending: false, nulls: "last" })
+      .order("created_at", { ascending: false })
       .limit(4);
     
     const { data: fallbackData, error: fallbackError } = await fallbackQuery;

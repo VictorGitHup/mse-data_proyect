@@ -1,4 +1,3 @@
-
 'use client';
 
 import Image from "next/image";
@@ -12,11 +11,12 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Mail, Phone, Send, Link as LinkIcon, User as UserIcon, MapPin, Video, Star } from "lucide-react";
+import { Mail, Phone, Send, Link as LinkIcon, User as UserIcon, MapPin, Video, Star, Rocket } from "lucide-react";
 import type { User } from "@supabase/supabase-js";
 import type { AdWithRelations, AdForCard, AdCommentWithProfile } from "@/lib/types";
 import AdCard from "./AdCard";
 import CommentSection from "./ratings/CommentSection";
+import { isFuture } from "date-fns";
 
 interface AdViewProps {
   ad: AdWithRelations;
@@ -65,6 +65,8 @@ export default function AdView({
   const otherMedia = allMedia.filter(m => m.id !== coverMedia?.id);
 
   const hasContactInfo = advertiser.contact_email || fullWhatsappNumber || advertiser.contact_telegram || advertiser.contact_social_url;
+  
+  const isBoosted = ad.boosted_until && isFuture(new Date(ad.boosted_until));
 
   const getStatusVariant = (status: AdWithRelations['status']) => {
     switch (status) {
@@ -101,7 +103,15 @@ export default function AdView({
             <CardHeader>
               <div className="flex justify-between items-start">
                 <div>
-                  <Badge variant="secondary" className="mb-2">{ad.categories?.name || 'Categoría'}</Badge>
+                    <div className="flex flex-wrap items-center gap-2 mb-2">
+                        <Badge variant="secondary">{ad.categories?.name || 'Categoría'}</Badge>
+                        {isBoosted && (
+                            <Badge className="bg-yellow-400 text-black hover:bg-yellow-500">
+                                <Rocket className="mr-1.5 h-3 w-3" />
+                                Destacado
+                            </Badge>
+                        )}
+                    </div>
                   <div className="flex items-center gap-4">
                       <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
                         <Avatar className="h-6 w-6">
