@@ -69,6 +69,7 @@ export default async function RankingPage({ searchParams }: RankingPageProps) {
         initialCategories={initialCategories as Category[]}
         initialCountries={initialCountries as Location[]}
         initialFilterState={searchParams}
+        showSearch={false}
       />
       
       <div className="space-y-16 mt-8">

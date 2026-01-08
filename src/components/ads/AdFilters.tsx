@@ -14,16 +14,17 @@ import { Filter } from 'lucide-react';
 interface AdFiltersProps {
   initialCategories: Category[];
   initialCountries: Location[];
-  initialFilterState?: { // Added to receive initial state from server
+  initialFilterState?: {
     q?: string;
     category?: string;
     country?: string;
     region?: string;
     subregion?: string;
   }
+  showSearch?: boolean; // New prop
 }
 
-export default function AdFilters({ initialCategories, initialCountries, initialFilterState }: AdFiltersProps) {
+export default function AdFilters({ initialCategories, initialCountries, initialFilterState, showSearch = true }: AdFiltersProps) {
   const supabase = createSupabaseBrowserClient();
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -63,7 +64,14 @@ export default function AdFilters({ initialCategories, initialCountries, initial
   };
   
   const resetFilters = () => {
-    router.replace(pathname, { scroll: false });
+    // Preserve other search params that are not part of the filters
+    const params = new URLSearchParams(searchParams);
+    params.delete('q');
+    params.delete('category');
+    params.delete('country');
+    params.delete('region');
+    params.delete('subregion');
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
      if (window.innerWidth < 768) {
         setIsSheetOpen(false);
     }
@@ -107,7 +115,7 @@ export default function AdFilters({ initialCategories, initialCountries, initial
 
   const filterContent = (
     <div className="space-y-4">
-        <AdSearch initialQuery={initialFilterState?.q} />
+        {showSearch && <AdSearch initialQuery={initialFilterState?.q} />}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {/* Category Filter */}
             <Select value={selectedCategory} onValueChange={(value) => updateSearchParam('category', value)}>
@@ -185,7 +193,7 @@ export default function AdFilters({ initialCategories, initialCountries, initial
                 <SheetTrigger asChild>
                     <Button variant="outline" className="w-full justify-center">
                         <Filter className="mr-2 h-4 w-4" />
-                        Filtros y Búsqueda
+                        Filtros
                     </Button>
                 </SheetTrigger>
                 <SheetContent side="bottom" className="rounded-t-lg">
