@@ -110,7 +110,7 @@ export default async function LocationPage({ params, searchParams }: LocationPag
       />
 
       {ads && ads.length > 0 ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 mt-8">
+        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6 mt-8">
           {ads.map((ad) => (
             <AdCard key={ad.id} ad={ad} />
           ))}

@@ -26,7 +26,7 @@ export default function AdCard({ ad }: AdCardProps) {
               src={coverImageUrl}
               alt={ad.title}
               fill
-              sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
+              sizes="(max-width: 640px) 50vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
               className="object-cover transition-transform duration-300 group-hover:scale-110"
             />
              {isBoosted && (
@@ -43,14 +43,14 @@ export default function AdCard({ ad }: AdCardProps) {
             )}
           </div>
         </CardHeader>
-        <CardContent className="p-4 space-y-2">
+        <CardContent className="p-2 sm:p-4 space-y-1 sm:space-y-2">
           {ad.category?.name && (
-             <Badge variant="secondary">{ad.category.name}</Badge>
+             <Badge variant="secondary" className="text-[10px] sm:text-xs">{ad.category.name}</Badge>
           )}
-          <h3 className="font-semibold text-lg leading-tight truncate">{ad.title}</h3>
+          <h3 className="font-semibold text-sm sm:text-lg leading-tight truncate">{ad.title}</h3>
           {ad.country?.name && (
-            <div className="flex items-center text-sm text-muted-foreground">
-              <MapPin className="mr-1.5 h-4 w-4 shrink-0" />
+            <div className="flex items-center text-xs text-muted-foreground">
+              <MapPin className="mr-1 h-3 w-3 sm:h-4 sm:w-4 shrink-0" />
               <span className="truncate">{ad.country.name}</span>
             </div>
           )}

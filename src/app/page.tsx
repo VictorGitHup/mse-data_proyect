@@ -123,15 +123,6 @@ export default async function Home({ searchParams }: HomePageProps) {
 
   return (
     <main className="container mx-auto p-4 md:p-8">
-      <header className="text-center mb-8">
-        <h1 className="text-4xl font-bold tracking-tighter sm:text-5xl">
-          Bienvenido a MiPlataforma
-        </h1>
-        <p className="mx-auto max-w-[700px] text-muted-foreground md:text-xl/relaxed mt-2">
-          Explora los anuncios publicados en nuestra plataforma.
-        </p>
-      </header>
-
       <AdFilters
         initialCategories={categories as Category[]}
         initialCountries={countries as Location[]}
@@ -139,7 +130,7 @@ export default async function Home({ searchParams }: HomePageProps) {
       />
 
       {ads && ads.length > 0 ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 mt-8">
+        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6 mt-8">
           {ads.map((ad) => (
             <AdCard key={ad.id} ad={ad} />
           ))}
