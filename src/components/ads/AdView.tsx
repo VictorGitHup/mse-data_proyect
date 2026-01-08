@@ -17,7 +17,7 @@ import type { User } from "@supabase/supabase-js";
 import type { AdWithRelations, AdForCard, AdCommentWithProfile } from "@/lib/types";
 import AdCard from "./AdCard";
 import CommentSection from "./ratings/CommentSection";
-import { isFuture } from "date-fns";
+import { isFuture, parseISO } from "date-fns";
 import { trackContactClick } from "@/lib/actions/track-click.action";
 
 interface AdViewProps {
@@ -73,7 +73,7 @@ export default function AdView({
 
   const hasContactInfo = advertiser.contact_email || fullWhatsappNumber || advertiser.contact_telegram || advertiser.contact_social_url;
   
-  const isBoosted = ad.boosted_until && isFuture(new Date(ad.boosted_until));
+  const isBoosted = ad.boosted_until && isFuture(parseISO(ad.boosted_until));
 
   const getStatusVariant = (status: AdWithRelations['status']) => {
     switch (status) {

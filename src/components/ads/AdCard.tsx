@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import type { AdForCard } from "@/lib/types";
 import { MapPin, Star, Rocket } from "lucide-react";
-import { isFuture } from "date-fns";
+import { isFuture, parseISO } from "date-fns";
 
 interface AdCardProps {
   ad: AdForCard;
@@ -15,7 +15,7 @@ interface AdCardProps {
 export default function AdCard({ ad }: AdCardProps) {
   // Ensure we have a cover image URL
   const coverImageUrl = ad.ad_media && ad.ad_media.length > 0 ? ad.ad_media[0].url : '/placeholder.png';
-  const isBoosted = ad.boosted_until && isFuture(new Date(ad.boosted_until));
+  const isBoosted = ad.boosted_until && isFuture(parseISO(ad.boosted_until));
 
   return (
     <Link href={`/ad/${ad.slug}`} className="group block">

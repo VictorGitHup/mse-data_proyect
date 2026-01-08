@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useTransition } from 'react';
@@ -101,13 +102,6 @@ export default function AdsTable({ ads, setAds }: AdsTableProps) {
     return texts[status] || 'Desconocido';
   }
   
-  // Helper to safely parse date and avoid hydration mismatch
-  const getUTCDate = (dateString: string) => {
-    // Supabase returns ISO 8601 strings with timezone.
-    // We can directly parse this to avoid local timezone interpretation issues.
-    return parseISO(dateString);
-  };
-
   return (
     <TooltipProvider>
       <div className="rounded-md border">
@@ -123,7 +117,7 @@ export default function AdsTable({ ads, setAds }: AdsTableProps) {
           </TableHeader>
           <TableBody>
             {ads.map(ad => {
-              const isBoosted = ad.boosted_until && isFuture(new Date(ad.boosted_until));
+              const isBoosted = ad.boosted_until && isFuture(parseISO(ad.boosted_until));
               return (
               <TableRow key={ad.id} className={isBoosted ? 'bg-yellow-50/50' : ''}>
                 <TableCell className="font-medium truncate max-w-[200px] sm:max-w-xs">
@@ -160,7 +154,7 @@ export default function AdsTable({ ads, setAds }: AdsTableProps) {
                 </TableCell>
                 
                 <TableCell className="hidden sm:table-cell">
-                  {format(getUTCDate(ad.created_at), 'dd MMM yyyy', { locale: es })}
+                  {format(parseISO(ad.created_at), 'dd MMM yyyy', { locale: es })}
                 </TableCell>
 
                 <TableCell>
