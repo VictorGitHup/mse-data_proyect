@@ -94,6 +94,7 @@ export type AdWithMedia = Ad & {
 export type AdForTable = Pick<Ad, 'id' | 'title' | 'created_at' | 'status' | 'slug' | 'boosted_until' | 'view_count' | 'contact_click_count'> & {
   category: { name: string } | null;
   comments_count: number;
+  created_at_formatted: string;
 };
 
 export type AdForCard = Pick<Ad, 'id' | 'title' | 'slug' | 'tags' | 'boosted_until'> & {

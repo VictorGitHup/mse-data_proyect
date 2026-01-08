@@ -16,9 +16,8 @@ import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { toggleAdStatus } from '@/lib/actions/ad-status.actions';
 import { boostAd } from '@/lib/actions/boost.actions';
-import { AdForTable } from '@/lib/types';
-import { format, isFuture, parseISO } from 'date-fns';
-import { es } from 'date-fns/locale';
+import type { AdForTable } from '@/lib/types';
+import { isFuture, parseISO } from 'date-fns';
 import Link from 'next/link';
 import { Eye, Edit, Rocket, BarChart2, MessageSquare, MousePointerClick } from 'lucide-react';
 import {
@@ -154,7 +153,7 @@ export default function AdsTable({ ads, setAds }: AdsTableProps) {
                 </TableCell>
                 
                 <TableCell className="hidden sm:table-cell">
-                  {format(parseISO(ad.created_at), 'dd MMM yyyy', { locale: es })}
+                  {ad.created_at_formatted}
                 </TableCell>
 
                 <TableCell>

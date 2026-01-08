@@ -1,10 +1,14 @@
+
 'use server';
 
-import { createSupabaseServerActionClient } from "@/lib/supabase/server";
-import { AdForCard, AdForTable } from "../types";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
+import type { AdForTable } from "../types";
+import { format } from 'date-fns';
+import { es } from 'date-fns/locale';
+import { parseISO } from 'date-fns/parseISO';
 
 export async function getAdsForAdvertiser(query: string, status: string) {
-  const supabase = createSupabaseServerActionClient();
+  const supabase = await createSupabaseServerClient();
 
   const { data: { user } } = await supabase.auth.getUser();
 
@@ -40,9 +44,10 @@ export async function getAdsForAdvertiser(query: string, status: string) {
   const { data, error } = await queryBuilder;
 
   // Supabase returns the count as an array with an object, e.g., [{ count: 5 }]
-  // We need to flatten this for easier use in the component.
+  // We need to flatten this and format the date for consistent display.
   const adsWithFlattenedComments = data?.map(ad => ({
     ...ad,
+    created_at_formatted: format(parseISO(ad.created_at), 'dd MMM yyyy', { locale: es }),
     comments_count: (ad.comments_count as unknown as [{ count: number }])[0].count,
   }));
 
@@ -60,7 +65,7 @@ export async function getSimilarAds({
   regionId: number | null;
   tags: string[] | null;
 }): Promise<AdForCard[]> {
-  const supabase = createSupabaseServerActionClient();
+  const supabase = await createSupabaseServerClient();
   const now = new Date().toISOString();
 
   // Base query
