@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useTransition } from 'react';
+import { useTransition, useState, useEffect } from 'react';
 import {
   Table,
   TableBody,
@@ -32,6 +32,28 @@ interface AdsTableProps {
   ads: AdForTable[];
   setAds: React.Dispatch<React.SetStateAction<AdForTable[]>>;
 }
+
+// Componente para formatear la fecha en el cliente de forma segura
+function ClientFormattedDate({ dateString }: { dateString: string }) {
+  const [formattedDate, setFormattedDate] = useState(dateString);
+
+  useEffect(() => {
+    // El código dentro de useEffect solo se ejecuta en el cliente después de la hidratación
+    try {
+      const date = parseISO(dateString);
+      setFormattedDate(format(date, 'dd MMM yyyy', { locale: es }));
+    } catch (error) {
+      console.error("Error formatting date:", error);
+      // Si hay un error, mantenemos la fecha original
+      setFormattedDate(dateString.split('T')[0]);
+    }
+  }, [dateString]);
+
+  // En el render inicial, esto devolverá la fecha original del servidor, evitando el error de hidratación.
+  // Después del montaje, se actualizará con la fecha formateada en el cliente.
+  return <>{formattedDate}</>;
+}
+
 
 export default function AdsTable({ ads, setAds }: AdsTableProps) {
   const [isPending, startTransition] = useTransition();
@@ -154,7 +176,7 @@ export default function AdsTable({ ads, setAds }: AdsTableProps) {
                 </TableCell>
                 
                 <TableCell className="hidden sm:table-cell">
-                  {format(parseISO(ad.created_at), 'dd MMM yyyy', { locale: es })}
+                  <ClientFormattedDate dateString={ad.created_at} />
                 </TableCell>
 
                 <TableCell>
