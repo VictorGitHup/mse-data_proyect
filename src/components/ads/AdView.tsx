@@ -1,3 +1,4 @@
+
 'use client';
 
 import Image from "next/image";
@@ -326,7 +327,7 @@ export default function AdView({
           <h2 className="text-3xl font-bold tracking-tight mb-6">
             También te podría interesar
           </h2>
-          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
+          <div className="grid grid-cols-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 gap-4 sm:gap-6">
             {similarAds.map((similarAd) => (
               <AdCard key={similarAd.id} ad={similarAd} />
             ))}
