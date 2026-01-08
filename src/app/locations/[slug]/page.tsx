@@ -4,6 +4,8 @@ import { notFound } from "next/navigation";
 import AdCard from "@/components/ads/AdCard";
 import AdFilters from "@/components/ads/AdFilters";
 import type { AdForCard, Category, Location } from "@/lib/types";
+import { isFuture, parseISO } from 'date-fns';
+import { Rocket } from "lucide-react";
 
 export const dynamic = 'force-dynamic';
 
@@ -55,7 +57,7 @@ export default async function LocationPage({ params, searchParams }: LocationPag
     .eq("ad_media.is_cover", true)
     .order("boosted_until", { ascending: false, nulls: "last" })
     .order("created_at", { ascending: false })
-    .limit(20);
+    .limit(40); // Increased limit
 
   // Apply location filter based on its type
   switch (location.type) {
@@ -86,6 +88,11 @@ export default async function LocationPage({ params, searchParams }: LocationPag
     console.error("Error fetching ads for location page:", adsError);
   }
 
+  // Separate boosted from regular ads
+  const allAds = ads || [];
+  const boostedAds = allAds.filter(ad => ad.boosted_until && isFuture(parseISO(ad.boosted_until)));
+  const regularAds = allAds.filter(ad => !boostedAds.some(boostedAd => boostedAd.id === ad.id));
+
   // Set initial state for filters based on the location
   const initialFilterState: { [key: string]: string } = { ...searchParams };
   if (location.type === 'country') initialFilterState.country = String(location.id);
@@ -110,20 +117,41 @@ export default async function LocationPage({ params, searchParams }: LocationPag
         initialFilterState={initialFilterState}
       />
 
-      {ads && ads.length > 0 ? (
-        <div className="grid grid-cols-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 gap-4 sm:gap-6 mt-8">
-          {ads.map((ad) => (
-            <AdCard key={ad.id} ad={ad} />
-          ))}
-        </div>
-      ) : (
-        <div className="text-center p-16 border-2 border-dashed rounded-lg mt-8">
-          <h2 className="text-2xl font-semibold">No se encontraron anuncios</h2>
-          <p className="text-muted-foreground mt-2">
-            No hay anuncios disponibles para esta ubicación y filtros. ¡Sé el primero en publicar!
-          </p>
-        </div>
-      )}
+      <div className="mt-8">
+        {boostedAds.length > 0 && (
+            <section className="mb-12">
+              <h2 className="text-2xl font-bold tracking-tight mb-6 flex items-center gap-2">
+                <Rocket className="text-yellow-500"/>
+                Anuncios Destacados
+              </h2>
+              <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-4 sm:gap-6">
+                {boostedAds.map((ad) => (
+                  <AdCard key={ad.id} ad={ad} />
+                ))}
+              </div>
+            </section>
+        )}
+
+        {regularAds.length > 0 ? (
+          <section>
+            {boostedAds.length > 0 && (
+              <h2 className="text-2xl font-bold tracking-tight mb-6">Más anuncios</h2>
+            )}
+            <div className="grid grid-cols-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 gap-4 sm:gap-6">
+              {regularAds.map((ad) => (
+                <AdCard key={ad.id} ad={ad} />
+              ))}
+            </div>
+          </section>
+        ) : boostedAds.length === 0 ? (
+          <div className="text-center p-16 border-2 border-dashed rounded-lg">
+            <h2 className="text-2xl font-semibold">No se encontraron anuncios</h2>
+            <p className="text-muted-foreground mt-2">
+              No hay anuncios disponibles para esta ubicación y filtros. ¡Sé el primero en publicar!
+            </p>
+          </div>
+        ) : null}
+      </div>
     </main>
   );
 }

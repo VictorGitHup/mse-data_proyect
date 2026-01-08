@@ -3,6 +3,8 @@ import AdCard from "@/components/ads/AdCard";
 import AdFilters from "@/components/ads/AdFilters";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import type { AdForCard, Category, Location } from "@/lib/types";
+import { isFuture, parseISO } from 'date-fns';
+import { Rocket } from "lucide-react";
 
 export const dynamic = 'force-dynamic';
 
@@ -86,7 +88,7 @@ export default async function Home({ searchParams }: HomePageProps) {
     .eq("ad_media.is_cover", true)
     .order("boosted_until", { ascending: false, nulls: "last" })
     .order("created_at", { ascending: false })
-    .limit(20);
+    .limit(40); // Increased limit to fetch more ads for both sections
 
   if (generalSearchTerms.length > 0) {
     const titleQuery = generalSearchTerms.map(term => `'${term}'`).join(' & ');
@@ -114,6 +116,13 @@ export default async function Home({ searchParams }: HomePageProps) {
     console.error("Error fetching ads for homepage:", error);
   }
 
+  // Separate boosted from regular ads
+  const now = new Date();
+  const allAds = ads || [];
+  const boostedAds = allAds.filter(ad => ad.boosted_until && isFuture(parseISO(ad.boosted_until)));
+  const regularAds = allAds.filter(ad => !boostedAds.some(boostedAd => boostedAd.id === ad.id));
+
+
   // We pass the potentially modified filters to the AdFilters component
   // so the dropdowns reflect the smart search.
   const initialFilterState = {
@@ -130,20 +139,39 @@ export default async function Home({ searchParams }: HomePageProps) {
         initialFilterState={initialFilterState}
       />
 
-      {ads && ads.length > 0 ? (
-        <div className="grid grid-cols-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 gap-4 sm:gap-6 mt-8">
-          {ads.map((ad) => (
-            <AdCard key={ad.id} ad={ad} />
-          ))}
-        </div>
-      ) : (
+      {boostedAds.length > 0 && (
+        <section className="mb-12">
+          <h2 className="text-2xl font-bold tracking-tight mb-6 flex items-center gap-2">
+            <Rocket className="text-yellow-500"/>
+            Anuncios Destacados
+          </h2>
+          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-4 sm:gap-6">
+            {boostedAds.map((ad) => (
+              <AdCard key={ad.id} ad={ad} />
+            ))}
+          </div>
+        </section>
+      )}
+
+      {regularAds.length > 0 ? (
+        <section>
+           {boostedAds.length > 0 && (
+             <h2 className="text-2xl font-bold tracking-tight mb-6">Más anuncios</h2>
+           )}
+          <div className="grid grid-cols-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 gap-4 sm:gap-6">
+            {regularAds.map((ad) => (
+              <AdCard key={ad.id} ad={ad} />
+            ))}
+          </div>
+        </section>
+      ) : boostedAds.length === 0 ? (
         <div className="text-center p-16 border-2 border-dashed rounded-lg mt-8">
           <h2 className="text-2xl font-semibold">No se encontraron anuncios</h2>
           <p className="text-muted-foreground mt-2">
             Prueba a cambiar los filtros o vuelve más tarde.
           </p>
         </div>
-      )}
+      ) : null}
     </main>
   );
 }

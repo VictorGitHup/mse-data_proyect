@@ -3,6 +3,9 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
 import UserProfileView from "@/components/profile/UserProfileView";
 import type { AdForCard } from "@/lib/types";
+import { isFuture, parseISO } from "date-fns";
+import { Rocket } from "lucide-react";
+import AdCard from "@/components/ads/AdCard";
 
 export const dynamic = 'force-dynamic';
 
@@ -59,6 +62,16 @@ export default async function ProfilePage({ params }: { params: { username: stri
     // Continue even if ads fail to load, just show the profile info
   }
   
+  const allAds = (ads as AdForCard[]) || [];
+  const boostedAds = allAds.filter(ad => ad.boosted_until && isFuture(parseISO(ad.boosted_until)));
+  const regularAds = allAds.filter(ad => !boostedAds.some(boostedAd => boostedAd.id === ad.id));
+
   // The 'any' cast is a workaround for complex generated types.
-  return <UserProfileView profile={profile as any} ads={ads as AdForCard[] || []} />;
+  return (
+    <UserProfileView 
+      profile={profile as any} 
+      boostedAds={boostedAds} 
+      regularAds={regularAds} 
+    />
+  );
 }
