@@ -1,9 +1,11 @@
+
 'use server';
 
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import type { AdForTable, AdForCard, Category } from "../types";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
+import { parseISO } from "date-fns";
 
 export async function getAdsForAdvertiser(query: string, status: string) {
   const supabase = await createSupabaseServerClient();
@@ -151,20 +153,31 @@ export async function getSimilarAds({
 }
 
 
-export async function getTopRatedAdsByCategory() {
+export async function getTopRatedAdsByCategory(filters: {
+  q?: string;
+  categoryId?: string;
+  countryId?: string;
+  regionId?: string;
+  subregionId?: string;
+} = {}) {
   const supabase = await createSupabaseServerClient();
 
-  const { data: categories, error: categoriesError } = await supabase
-    .from('categories')
-    .select('id, name');
+  // 1. Get the list of categories to iterate over.
+  // If a specific category is filtered, only fetch that one.
+  let categoryQuery = supabase.from('categories').select('id, name');
+  if (filters.categoryId) {
+    categoryQuery = categoryQuery.eq('id', filters.categoryId);
+  }
+  const { data: categories, error: categoriesError } = await categoryQuery;
 
   if (categoriesError) {
     return { data: null, error: 'Could not fetch categories.' };
   }
 
+  // 2. For each category, fetch the top 3 ads applying the location/text filters.
   const categoriesWithAds = await Promise.all(
-    categories.map(async (category: Category) => {
-      const { data: topAds, error: adsError } = await supabase
+    (categories || []).map(async (category: Category) => {
+      let queryBuilder = supabase
         .from('ads_with_ratings')
         .select(`
           id,
@@ -178,9 +191,26 @@ export async function getTopRatedAdsByCategory() {
         .eq('category_id', category.id)
         .eq('status', 'active')
         .eq('ad_media.is_cover', true)
+        .gt('rating_count', 0) // Only include ads that have at least one rating
         .order('avg_rating', { ascending: false, nulls: 'last' })
         .order('rating_count', { ascending: false })
         .limit(3);
+
+      // Apply filters to the query for each category
+      if (filters.q) {
+        queryBuilder = queryBuilder.ilike('title', `%${filters.q}%`);
+      }
+      if (filters.countryId) {
+        queryBuilder = queryBuilder.eq('country_id', filters.countryId);
+      }
+      if (filters.regionId) {
+        queryBuilder = queryBuilder.eq('region_id', filters.regionId);
+      }
+      if (filters.subregionId) {
+        queryBuilder = queryBuilder.eq('subregion_id', filters.subregionId);
+      }
+      
+      const { data: topAds, error: adsError } = await queryBuilder;
 
       if (adsError) {
         console.error(`Error fetching ads for category ${category.name}:`, adsError);
