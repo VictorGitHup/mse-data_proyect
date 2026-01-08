@@ -4,6 +4,7 @@ import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
 import Header from '@/components/Header';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
+import Footer from '@/components/Footer';
 
 export const metadata: Metadata = {
   title: 'Next Starter',
@@ -45,10 +46,11 @@ export default async function RootLayout({
           rel="stylesheet"
         />
       </head>
-      <body className="font-body antialiased">
+      <body className="font-body antialiased flex flex-col min-h-screen">
         <Header user={user} profile={profile} />
-        <main>{children}</main>
+        <main className="flex-grow">{children}</main>
         <Toaster />
+        <Footer />
       </body>
     </html>
   );
