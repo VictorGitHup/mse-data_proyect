@@ -6,36 +6,62 @@ export const metadata = {
 export default function ParentalControlPage() {
   return (
     <>
-      <h1>Guía de Control Parental y Seguridad</h1>
-      <p className="lead">Última actualización: 7 de enero de 2026</p>
+      <h1>Declaración de Cumplimiento y Protección al Menor</h1>
+      <p className="lead">MiEscortErotica es un sitio web exclusivo para mayores de edad. En cumplimiento con la normativa aplicable y en compromiso con la protección de los menores, implementamos las siguientes medidas:</p>
 
-      <p>MiPlataforma está destinada a un público adulto (mayores de 18 años). El contenido publicado por nuestros usuarios puede no ser apropiado para menores. Nos tomamos muy en serio la seguridad en línea y recomendamos encarecidamente a los padres y tutores que tomen medidas para proteger a los menores del contenido para adultos.</p>
-
-      <h2>1. Verificación de Edad y Acceso</h2>
-      <p>Aunque exigimos que todos los usuarios confirmen que son mayores de 18 años al registrarse, no realizamos verificaciones de edad formales. Por lo tanto, la responsabilidad principal de prevenir el acceso de menores a la plataforma recae en los padres y tutores.</p>
-
-      <h2>2. Herramientas de Control Parental</h2>
-      <p>Existen numerosas herramientas de software y servicios de terceros que pueden ayudar a los padres a controlar y restringir el acceso a sitios web y contenido en línea. Recomendamos a los padres que investiguen y utilicen estas herramientas para crear un entorno de navegación seguro para sus hijos.</p>
-      <p>Algunos ejemplos de software de control parental incluyen:</p>
+      <h2>Acceso Restringido</h2>
+      <p>El acceso a nuestro sitio está estrictamente limitado a personas mayores de 18 años. Verificamos la edad mediante declaración afirmativa al registrarse.</p>
+      
+      <h2>Etiquetado RTA</h2>
+      <p>Nuestro sitio está etiquetado con el sistema RTA (Restricted To Adults). Esta etiqueta permite que herramientas estándar de control parental (software, hardware o servicios de filtrado) bloqueen el acceso automáticamente.</p>
+      
+      <h2>Responsabilidad Parental</h2>
+      <p>Reconocemos que la protección primaria de los menores en línea es responsabilidad de los padres, tutores o cuidadores. Instamos encarecidamente a la implementación activa de soluciones de control parental en todos los dispositivos y conexiones a internet a los que un menor pueda tener acceso.</p>
+      
+      <h2>Recursos y Asociaciones de Protección</h2>
+      <p>Colaboramos y apoyamos a organizaciones dedicadas a la seguridad en línea:</p>
       <ul>
-        <li>Net Nanny</li>
-        <li>Kaspersky Safe Kids</li>
-        <li>Qustodio</li>
-        <li>Norton Family</li>
-        <li>Funciones de control parental integradas en sistemas operativos como Windows y macOS.</li>
-      </ul>
-      <p><em>(Nota: MiPlataforma no respalda ni tiene afiliación con ninguno de estos productos. Se proporcionan solo como ejemplos informativos).</em></p>
-
-      <h2>3. Recomendaciones para los Padres</h2>
-      <ul>
-        <li><strong>Mantén una comunicación abierta:</strong> Habla con tus hijos sobre los peligros de Internet y el contenido para adultos.</li>
-        <li><strong>Supervisa el uso de Internet:</strong> Mantén las computadoras y dispositivos en áreas comunes de la casa y establece reglas claras sobre el tiempo de pantalla y los sitios web permitidos.</li>
-        <li><strong>Utiliza software de filtrado:</strong> Instala y configura software de control parental para bloquear el acceso a sitios como el nuestro.</li>
-        <li><strong>Educa sobre la privacidad:</strong> Enseña a tus hijos a no compartir nunca información personal en línea.</li>
+        <li><strong>ASACP (Adult Sites Against Child Pornography):</strong> Organización sin ánimo de lucro que combate la explotación infantil a través de su línea de denuncia y promueve el etiquetado RTA.</li>
+        <li><strong>RTA Label:</strong> Sistema de etiquetado que implementamos para facilitar el bloqueo técnico de nuestro sitio. <a href="https://www.rtalabel.org/" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Más información aquí</a>.</li>
+        <li><strong>Revenge Porn Helpline:</strong> Servicio de apoyo (Reino Unido) para adultos mayores de 18 años que son víctimas de abuso por imágenes íntimas.</li>
       </ul>
 
-      <h2>4. Reportar Contenido Inapropiado</h2>
-      <p>Si encuentras contenido en MiPlataforma que involucre o parezca explotar a un menor, repórtalo inmediatamente a las autoridades locales y a nuestro equipo de soporte a través de nuestra página de contacto. Nos tomamos estos informes con la máxima seriedad y cooperaremos plenamente con las fuerzas del orden.</p>
+      <h2>Guía de Herramientas de Control Parental (Recomendaciones)</h2>
+      <p>Como apoyo a la labor de protección, proporcionamos información sobre herramientas disponibles:</p>
+      
+      <h3>1. Filtros en Motores de Búsqueda</h3>
+      <p>Activar el "Modo Seguro" o "SafeSearch" ayuda a bloquear contenido para adultos en los resultados.</p>
+      <ul>
+        <li>Google SafeSearch: Configurable en cuentas individuales, navegadores, dispositivos con Family Link, y redes.</li>
+        <li>Yahoo SafeSearch / Microsoft SafeSearch / Yandex Family Search: Funciones similares en sus respectivos motores.</li>
+        <li>Motores de búsqueda para niños: Alternativas diseñadas para entornos seguros (ej., Kiddle, KidRex).</li>
+      </ul>
+      
+      <h3>2. Controles Parentales en Sistemas Operativos</h3>
+      <p>Todos los sistemas operativos principales ofrecen configuraciones nativas:</p>
+      <ul>
+        <li>Apple (iOS/macOS): Permiten restringir contenido, aplicaciones y acceso web. <a href="https://support.apple.com/es-es/HT201304" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Guía para iPhone/iPad</a>. <a href="https://support.apple.com/es-es/guide/mac-help/mchlp1476/mac" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Guía para macOS</a>.</li>
+        <li>Android: El Centro de Seguridad Familiar de Google ofrece controles detallados.</li>
+        <li>Microsoft Windows: La configuración de "Opciones familiares" permite crear cuentas infantiles con restricciones. <a href="https://account.microsoft.com/family/" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Más información</a>.</li>
+        <li>Amazon Kids+: Ofrece controles para gestionar tiempo de pantalla, contenido y navegación en dispositivos Amazon.</li>
+      </ul>
+
+      <h3>3. Software Especializado de Control Parental</h3>
+      <p>Soluciones de terceros que ofrecen filtrado avanzado, supervisión y gestión. Algunas opciones reconocidas son: Qustodio, Net Nanny, Norton Family, Mobicip, SentryPC y Bark.</p>
+
+      <h2>Recursos para una Crianza Digital Informada</h2>
+      <p>La educación es fundamental. Recomendamos estos recursos para profundizar en seguridad digital, comunicación con los hijos y establecimiento de límites saludables:</p>
+      <ul>
+        <li>Family Online Safety Institute (FOSI)</li>
+        <li>ConnectSafely</li>
+        <li>Internet Matters</li>
+        <li>Better Internet for Kids (UE)</li>
+        <li>UK Safer Internet Centre</li>
+        <li>International Centre for Missing & Exploited Children - Digital Parenting</li>
+      </ul>
+
+      <h2>Declaración Final de Cumplimiento</h2>
+      <p>MiEscortErotica mantiene un compromiso permanente con el cumplimiento de las normativas de protección al menor. Implementamos y mantenemos activamente la compatibilidad técnica con el sistema RTA y otras medidas proactivas para facilitar el bloqueo de nuestro contenido por parte de herramientas de control parental. La protección efectiva de los menores en el entorno digital requiere un esfuerzo conjunto entre proveedores de contenido, desarrolladores de tecnología, y especialmente, la supervisión activa de los padres y tutores.</p>
     </>
   );
 }
