@@ -44,10 +44,9 @@ export async function getAdsForAdvertiser(query: string, status: string) {
   const { data, error } = await queryBuilder;
 
   // Supabase returns the count as an array with an object, e.g., [{ count: 5 }]
-  // We need to flatten this and format the date for consistent display.
+  // We need to flatten this. We are no longer formatting the date here.
   const adsWithFlattenedComments = data?.map(ad => ({
     ...ad,
-    created_at_formatted: format(parseISO(ad.created_at), 'dd MMM yyyy', { locale: es }),
     comments_count: (ad.comments_count as unknown as [{ count: number }])[0].count,
   }));
 
