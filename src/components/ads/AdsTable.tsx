@@ -16,7 +16,7 @@ import { useToast } from '@/hooks/use-toast';
 import { toggleAdStatus } from '@/lib/actions/ad-status.actions';
 import { boostAd } from '@/lib/actions/boost.actions';
 import { AdForTable } from '@/lib/types';
-import { format, isFuture } from 'date-fns';
+import { format, isFuture, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
 import Link from 'next/link';
 import { Eye, Edit, Rocket, BarChart2, MessageSquare, MousePointerClick } from 'lucide-react';
@@ -100,6 +100,13 @@ export default function AdsTable({ ads, setAds }: AdsTableProps) {
     };
     return texts[status] || 'Desconocido';
   }
+  
+  // Helper to safely parse date and avoid hydration mismatch
+  const getUTCDate = (dateString: string) => {
+    // Supabase returns ISO 8601 strings with timezone.
+    // We can directly parse this to avoid local timezone interpretation issues.
+    return parseISO(dateString);
+  };
 
   return (
     <TooltipProvider>
@@ -153,7 +160,7 @@ export default function AdsTable({ ads, setAds }: AdsTableProps) {
                 </TableCell>
                 
                 <TableCell className="hidden sm:table-cell">
-                  {format(new Date(ad.created_at), 'dd MMM yyyy', { locale: es })}
+                  {format(getUTCDate(ad.created_at), 'dd MMM yyyy', { locale: es })}
                 </TableCell>
 
                 <TableCell>
