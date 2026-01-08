@@ -9,13 +9,14 @@ export default function ParentalControlPage() {
       <h1>Declaración de Cumplimiento y Protección al Menor</h1>
       <p className="lead">MiEscortErotica es un sitio web exclusivo para mayores de edad. En cumplimiento con la normativa aplicable y en compromiso con la protección de los menores, implementamos las siguientes medidas:</p>
 
-      <h2>Acceso Restringido</h2>
+      <h2>Principios Fundamentales</h2>
+      <h3>Acceso Restringido</h3>
       <p>El acceso a nuestro sitio está estrictamente limitado a personas mayores de 18 años. Verificamos la edad mediante declaración afirmativa al registrarse.</p>
       
-      <h2>Etiquetado RTA</h2>
+      <h3>Etiquetado RTA</h3>
       <p>Nuestro sitio está etiquetado con el sistema RTA (Restricted To Adults). Esta etiqueta permite que herramientas estándar de control parental (software, hardware o servicios de filtrado) bloqueen el acceso automáticamente.</p>
       
-      <h2>Responsabilidad Parental</h2>
+      <h3>Responsabilidad Parental</h3>
       <p>Reconocemos que la protección primaria de los menores en línea es responsabilidad de los padres, tutores o cuidadores. Instamos encarecidamente a la implementación activa de soluciones de control parental en todos los dispositivos y conexiones a internet a los que un menor pueda tener acceso.</p>
       
       <h2>Recursos y Asociaciones de Protección</h2>
@@ -26,7 +27,7 @@ export default function ParentalControlPage() {
         <li><strong>Revenge Porn Helpline:</strong> Servicio de apoyo (Reino Unido) para adultos mayores de 18 años que son víctimas de abuso por imágenes íntimas.</li>
       </ul>
 
-      <h2>Guía de Herramientas de Control Parental (Recomendaciones)</h2>
+      <h2>Guía de Herramientas de Control Parental</h2>
       <p>Como apoyo a la labor de protección, proporcionamos información sobre herramientas disponibles:</p>
       
       <h3>1. Filtros en Motores de Búsqueda</h3>
@@ -37,7 +38,7 @@ export default function ParentalControlPage() {
         <li>Motores de búsqueda para niños: Alternativas diseñadas para entornos seguros (ej., Kiddle, KidRex).</li>
       </ul>
       
-      <h3>2. Controles Parentales en Sistemas Operativos</h3>
+      <h3>2. Controles Nativos en Sistemas Operativos</h3>
       <p>Todos los sistemas operativos principales ofrecen configuraciones nativas:</p>
       <ul>
         <li>Apple (iOS/macOS): Permiten restringir contenido, aplicaciones y acceso web. <a href="https://support.apple.com/es-es/HT201304" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Guía para iPhone/iPad</a>. <a href="https://support.apple.com/es-es/guide/mac-help/mchlp1476/mac" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Guía para macOS</a>.</li>
