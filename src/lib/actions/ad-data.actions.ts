@@ -1,8 +1,9 @@
-
 'use server';
 
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import type { AdForTable } from "../types";
+import type { AdForTable, AdForCard, Category } from "../types";
+import { format } from "date-fns";
+import { es } from "date-fns/locale";
 
 export async function getAdsForAdvertiser(query: string, status: string) {
   const supabase = await createSupabaseServerClient();
@@ -147,4 +148,50 @@ export async function getSimilarAds({
   }
 
   return data as AdForCard[];
+}
+
+
+export async function getTopRatedAdsByCategory() {
+  const supabase = await createSupabaseServerClient();
+
+  const { data: categories, error: categoriesError } = await supabase
+    .from('categories')
+    .select('id, name');
+
+  if (categoriesError) {
+    return { data: null, error: 'Could not fetch categories.' };
+  }
+
+  const categoriesWithAds = await Promise.all(
+    categories.map(async (category: Category) => {
+      const { data: topAds, error: adsError } = await supabase
+        .from('ads_with_ratings')
+        .select(`
+          id,
+          title,
+          slug,
+          avg_rating,
+          rating_count,
+          ad_media!inner(url, is_cover),
+          country:country_id(name)
+        `)
+        .eq('category_id', category.id)
+        .eq('status', 'active')
+        .eq('ad_media.is_cover', true)
+        .order('avg_rating', { ascending: false, nulls: 'last' })
+        .order('rating_count', { ascending: false })
+        .limit(3);
+
+      if (adsError) {
+        console.error(`Error fetching ads for category ${category.name}:`, adsError);
+      }
+      
+      return {
+        ...category,
+        top_ads: (topAds as AdForCard[]) || [],
+      };
+    })
+  );
+
+  return { data: categoriesWithAds, error: null };
 }

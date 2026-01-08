@@ -1,9 +1,8 @@
-
 'use client';
 
 import Link from 'next/link';
 import { Button } from './ui/button';
-import { User as UserIcon, LayoutDashboard, PlusCircle, LogOut, Menu } from 'lucide-react';
+import { User as UserIcon, LayoutDashboard, PlusCircle, LogOut, Menu, Trophy } from 'lucide-react';
 import type { User } from '@supabase/supabase-js';
 import { logout } from '@/lib/actions/auth.actions';
 import { Sheet, SheetContent, SheetTrigger, SheetClose } from './ui/sheet';
@@ -26,6 +25,12 @@ export default function Header({ user, profile }: HeaderProps) {
 
   const navLinks = (
     <>
+      <Link href="/ranking" className="w-full">
+        <Button variant="ghost" className="w-full justify-start">
+          <Trophy className="mr-2 h-4 w-4" />
+          Ranking
+        </Button>
+      </Link>
       {user ? (
         <>
           {isAdvertiser && (
